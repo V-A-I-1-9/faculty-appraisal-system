@@ -61,10 +61,10 @@ const PrincipalDashboard = () => {
                 const p4_percent = (p4_hr / 180) * 100;
                 if (p2_percent >= 60 && p3_percent >= 60 && p4_percent >= 60 && grand_score >= 70) category = 'A';
                 else if (p2_percent >= 50 && p3_percent >= 50 && p4_percent >= 50 && grand_score >= 60) category = 'B';
-                else if (p2_percent >= 50 && p3_percent < 50 && p4_percent >= 50 && grand_score >= 55) category = 'C';
-                else if (p2_percent >= 50 && p3_percent >= 50 && p4_percent < 50 && grand_score >= 50) category = 'D';
-                else if (p2_percent < 50 && p3_percent >= 50 && p4_percent < 50 && grand_score >= 40) category = 'E';
-                else if (p2_percent < 50 && p3_percent < 50 && p4_percent < 50) category = 'F';
+                else if (p2_percent >= 50 && p3_percent <= 50 && p4_percent >= 50 && grand_score >= 55) category = 'C';
+                else if (p2_percent >= 50 && p3_percent >= 50 && p4_percent <= 50 && grand_score >= 50) category = 'D';
+                else if (p2_percent >= 50 && p3_percent <= 50 && p4_percent <= 50 && grand_score >= 40) category = 'E';
+                else if (p2_percent <= 50 && p3_percent <= 50 && p4_percent <= 50) category = 'F';
                 else category = 'Not Categorized';
             }
             return { ...app, category };
