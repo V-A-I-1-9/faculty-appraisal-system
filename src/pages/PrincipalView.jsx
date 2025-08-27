@@ -47,9 +47,9 @@ const PrincipalView = () => {
 
         if (p2_percent >= 60 && p3_percent >= 60 && p4_percent >= 60 && grand_score >= 70) return 'A';
         if (p2_percent >= 50 && p3_percent >= 50 && p4_percent >= 50 && grand_score >= 60) return 'B';
-        if (p2_percent >= 50 && p3_percent < 50 && p4_percent >= 50 && grand_score >= 55) return 'C';
-        if (p2_percent >= 50 && p3_percent >= 50 && p4_percent < 50 && grand_score >= 50) return 'D';
-        if (p2_percent < 50 && p3_percent >= 50 && p4_percent < 50 && grand_score >= 40) return 'E';
+        if (p2_percent >= 50 && p3_percent <= 50 && p4_percent >= 50 && grand_score >= 55) return 'C';
+        if (p2_percent >= 50 && p3_percent >= 50 && p4_percent <= 50 && grand_score >= 50) return 'D';
+        if (p2_percent >= 50 && p3_percent <= 50 && p4_percent <= 50 && grand_score >= 40) return 'E';
         if (p2_percent < 50 && p3_percent < 50 && p4_percent < 50) return 'F';
         
         return 'Not Categorized';
