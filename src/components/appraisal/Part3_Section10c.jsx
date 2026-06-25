@@ -2,9 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import FileUpload from './FileUpload';
 
-// --- UI IMPORTS (with fixes) ---
-// New (corrected) line
-import { Box, Typography, Button, TextField, IconButton, RadioGroup, FormControlLabel, Radio, Select, MenuItem, FormControl, InputLabel, Chip, Divider } from '@mui/material';
+import { Box, Typography, Button, TextField, IconButton, Select, MenuItem, FormControl, InputLabel, Chip, Divider, Paper } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
@@ -19,150 +17,184 @@ const Part3_Section10c = ({ data, setData, isHodView = false, hodData, setHodDat
         getUser();
     }, []);
 
+    // Ensure data shape is properly initialized
+    const currentData = isHodView ? hodData : data;
+    const safeData = currentData || {};
+    const safePapers = safeData.papers || [{ name: '', file_url: '' }];
+
     const apiScore = useMemo(() => {
-        const { selectedOption, details } = data || {};
-        // --- CORRECTED LOGIC ---
-        // Use the 'journalsPublished' prop which comes from section 10a's array length
         const totalJournals = parseInt(journalsPublished || 0, 10); 
+        let score = 0;
         
-        switch (selectedOption) {
-            case 'scopus':
-                const indexedPapersCount = (details?.papers || []).filter(p => p.name).length;
-                if (totalJournals > 0 && indexedPapersCount > 0) {
-                    const rawScore = (indexedPapersCount / totalJournals) * 40;
-                    return Math.min(rawScore, 40);
-                }
-                return 0;
-            case 'chapters': 
-                const chapters = parseInt(details?.chapters_count || 0, 10); 
-                if (chapters >= 5) return 40; if (chapters === 4) return 35; if (chapters === 3) return 30; if (chapters === 2) return 25; if (chapters === 1) return 20; return 0;
-            case 'books': 
-                const prescribed = details?.prescribed_status || ''; 
-                if (prescribed === 'two_plus') return 40; if (prescribed === 'one') return 35; if (prescribed === 'authored') return 30; return 0;
-            default: 
-                return 0;
+        // 1. Scopus Score
+        const indexedPapersCount = (safeData.papers || []).filter(p => p.name).length;
+        if (totalJournals > 0 && indexedPapersCount > 0) {
+            score += (indexedPapersCount / totalJournals) * 40;
         }
-    }, [data, journalsPublished]);
-    const handleOptionChange = (e) => {
-        const stateSetter = isHodView ? setHodData : setData;
-        const selected = e.target.value;
-        let initialDetails = {};
-        if (selected === 'scopus') {
-            initialDetails = { papers: [{ name: '', file_url: '' }] };
-        }
-        stateSetter({ selectedOption: selected, details: initialDetails });
-    };
+
+        // 2. Chapters Score
+        const chapters = parseInt(safeData.chapters_count || 0, 10); 
+        if (chapters >= 5) score += 40; 
+        else if (chapters === 4) score += 35; 
+        else if (chapters === 3) score += 30; 
+        else if (chapters === 2) score += 25; 
+        else if (chapters === 1) score += 20;
+
+        // 3. Books Score
+        const prescribed = safeData.prescribed_status || ''; 
+        if (prescribed === 'two_plus') score += 40; 
+        else if (prescribed === 'one') score += 35; 
+        else if (prescribed === 'authored') score += 30;
+
+        return Math.min(score, 40);
+    }, [safeData, journalsPublished]);
 
     const handleDetailChange = (e, index) => {
         const { name, value } = e.target;
         const stateSetter = isHodView ? setHodData : setData;
-        const currentData = isHodView ? hodData : data;
 
-        if (currentData.selectedOption === 'scopus') {
-            const newPapers = [...(currentData.details.papers || [])];
+        if (name === 'name') {
+            const newPapers = [...safePapers];
             newPapers[index] = { ...newPapers[index], [name]: value };
-            stateSetter({ ...currentData, details: { ...currentData.details, papers: newPapers } });
+            stateSetter({ ...safeData, papers: newPapers });
         } else {
-            stateSetter({ ...currentData, details: { ...currentData.details, [name]: value } });
+            stateSetter({ ...safeData, [name]: value });
         }
     };
     
     const handleUpload = (index, url) => {
-        const newPapers = [...(data.details.papers || [])];
+        const newPapers = [...safePapers];
         newPapers[index].file_url = url;
-        setData({ ...data, details: { ...data.details, papers: newPapers } });
+        setData({ ...safeData, papers: newPapers });
     };
 
     const handleRemove = (index) => {
-        const newPapers = [...(data.details.papers || [])];
+        const newPapers = [...safePapers];
         newPapers[index].file_url = '';
-        setData({ ...data, details: { ...data.details, papers: newPapers } });
+        setData({ ...safeData, papers: newPapers });
     };
 
     const addPaper = () => {
-        const papers = data.details.papers || [];
-        setData({ ...data, details: { ...data.details, papers: [...papers, { name: '', file_url: '' }] } });
+        setData({ ...safeData, papers: [...safePapers, { name: '', file_url: '' }] });
     };
 
     const removePaper = (index) => {
-        const newPapers = [...data.details.papers];
+        const newPapers = [...safePapers];
         newPapers.splice(index, 1);
-        setData({ ...data, details: { ...data.details, papers: newPapers } });
-    };
-    const renderDetailFields = (isForHod) => {
-        const currentData = isForHod ? hodData : data;
-        const isDisabled = isHodView && !isForHod;
-
-        switch (currentData?.selectedOption) {
-            case 'scopus':
-                return (
-                    <Box>
-                        {(currentData?.details?.papers || []).map((paper, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                <TextField name="name" label={`Indexed Paper ${index + 1}`} value={paper.name} onChange={(e) => handleDetailChange(e, index)} fullWidth size="small" disabled={isDisabled} />
-                                {!isHodView && <FileUpload fileUrl={paper.file_url} onUpload={(url) => handleUpload(index, url)} onRemove={() => handleRemove(index)} userId={userId} sectionName="section10c" rowIndex={index} />}
-                                {!isHodView && <IconButton onClick={() => removePaper(index)} color="secondary" disabled={(currentData?.details?.papers || []).length < 2}><RemoveCircleOutlineIcon /></IconButton>}
-                            </Box>
-                        ))}
-                        {!isHodView && <Button startIcon={<AddCircleOutlineIcon />} onClick={addPaper} size="small">Add Indexed Paper</Button>}
-                    </Box>
-                );
-            case 'chapters': 
-                return <TextField type="number" name="chapters_count" label="No. of Book Chapters" value={currentData?.details?.chapters_count || ''} onChange={(e) => handleDetailChange(e)} disabled={isDisabled} size="small" />;
-            case 'books': 
-                return (
-                    <FormControl fullWidth size="small" disabled={isDisabled}>
-                        <InputLabel>Status</InputLabel>
-                        <Select name="prescribed_status" value={currentData?.details?.prescribed_status || ''} label="Status" onChange={(e) => handleDetailChange(e)}>
-                            <MenuItem value="two_plus">Prescribed by 2+ Universities</MenuItem>
-                            <MenuItem value="one">Prescribed by 1 University</MenuItem>
-                            <MenuItem value="authored">Authored (Not Prescribed)</MenuItem>
-                        </Select>
-                    </FormControl>
-                );
-            default: 
-                return <Typography variant="body2" color="text.secondary">Select an option to add details.</Typography>;
-        }
+        setData({ ...safeData, papers: newPapers });
     };
 
     if (!isHodView) {
         return (
-            <Box sx={{ border: '1px solid #eee', p: 2, borderRadius: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>10.c. Indexed Papers / Book Chapters / Books Authored</Typography>
-                <RadioGroup name="section10c_option" value={data?.selectedOption || ''} onChange={handleOptionChange} sx={{ pl: 1, mt: 1 }}>
-                    <FormControlLabel value="scopus" control={<Radio size="small" />} label="Papers indexed in Scopus/WoS/UGC" />
-                    <FormControlLabel value="chapters" control={<Radio size="small" />} label="Book chapters authored" />
-                    <FormControlLabel value="books" control={<Radio size="small" />} label="Books Authored" />
-                </RadioGroup>
-                <Box sx={{ mt: 2, pl: 2 }}>{renderDetailFields(false)}</Box>
-                <Divider sx={{ my: 2 }}/>
-                <Typography sx={{fontWeight: 'bold', pl: 2}}>API Score for this section: {apiScore.toFixed(2)} / 40</Typography>
-            </Box>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>10.c. Indexed Papers / Book Chapters / Books Authored</Typography>
+                    <Chip label={`Score: ${apiScore.toFixed(2)} / 40`} color="primary" size="small" />
+                </Box>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {/* SCOPUS PAPERS */}
+                    <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Papers indexed in Scopus/WoS/UGC</Typography>
+                        {safePapers.map((paper, index) => (
+                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                                <TextField name="name" label={`Indexed Paper ${index + 1}`} value={paper.name || ''} onChange={(e) => handleDetailChange(e, index)} size="small" sx={{ flexGrow: 1, minWidth: 200 }} />
+                                <FileUpload fileUrl={paper.file_url} onUpload={(url) => handleUpload(index, url)} onRemove={() => handleRemove(index)} userId={userId} sectionName="section10c" rowIndex={index} />
+                                <IconButton onClick={() => removePaper(index)} color="secondary" disabled={safePapers.length < 2}><RemoveCircleOutlineIcon /></IconButton>
+                            </Box>
+                        ))}
+                        <Button startIcon={<AddCircleOutlineIcon />} onClick={addPaper} size="small" variant="outlined">Add Indexed Paper</Button>
+                    </Box>
+
+                    <Divider />
+
+                    {/* BOOK CHAPTERS */}
+                    <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Book Chapters Authored</Typography>
+                        <TextField type="number" name="chapters_count" label="No. of Book Chapters" value={safeData.chapters_count || ''} onChange={handleDetailChange} size="small" sx={{ width: 200 }} />
+                    </Box>
+
+                    <Divider />
+
+                    {/* BOOKS AUTHORED */}
+                    <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Books Authored</Typography>
+                        <FormControl size="small" sx={{ width: 300 }}>
+                            <InputLabel>Status</InputLabel>
+                            <Select name="prescribed_status" value={safeData.prescribed_status || ''} label="Status" onChange={handleDetailChange}>
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                <MenuItem value="two_plus">Prescribed by 2+ Universities</MenuItem>
+                                <MenuItem value="one">Prescribed by 1 University</MenuItem>
+                                <MenuItem value="authored">Authored (Not Prescribed)</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </Box>
+            </Paper>
         );
     }
     
     // HOD view
     return (
-       <Box sx={{ border: '1px solid #eee', p: 2, borderRadius: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>10.c. Indexed Papers / Book Chapters / Books Authored</Typography>
-            <Box sx={{ p: 2, backgroundColor: '#f9f9f9', borderRadius: 1, mt: 1 }}>
-                <Typography sx={{ fontWeight: 'bold' }} variant="body2">Self-Rating (SR)</Typography>
-                <Typography><strong>Selected Option:</strong> <Chip label={data?.selectedOption || 'N/A'} size="small" sx={{ml: 1}} /></Typography>
-                <Box sx={{ mt: 2 }}>
-                    {/* --- THIS IS THE FIX --- */}
-                    {data?.selectedOption === 'scopus' &&
-                        (data.details?.papers || []).map((paper, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography>{paper.name || `Paper ${index + 1}`}</Typography>
-                                {paper.file_url ? (<Button variant="outlined" size="small" component="a" href={paper.file_url} target="_blank">View Evidence</Button>) : (<Typography variant="body2" color="text.secondary">No Evidence</Typography>)}
-                            </Box>
-                        ))
-                    }
-                    {data?.selectedOption === 'chapters' && <Typography><strong>Count:</strong> {data?.details?.chapters_count || 'N/A'}</Typography>}
-                    {data?.selectedOption === 'books' && <Typography><strong>Status:</strong> {data?.details?.prescribed_status || 'N/A'}</Typography>}
+        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>10.c. Indexed Papers / Book Chapters / Books Authored</Typography>
+            </Box>
+
+            {/* Self Rating Display */}
+            <Box sx={{ p: 2, backgroundColor: '#f9f9f9', borderRadius: 1, mb: 3 }}>
+                <Typography sx={{ fontWeight: 'bold', mb: 1 }} variant="body2">Self-Rating (SR)</Typography>
+                
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>Papers indexed in Scopus/WoS/UGC:</Typography>
+                {(data?.papers || []).length > 0 && (data?.papers || [])[0].name ? (
+                    (data?.papers || []).map((paper, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, pl: 2 }}>
+                            <Typography variant="body2">- {paper.name || `Paper ${index + 1}`}</Typography>
+                            {paper.file_url ? (<Button variant="outlined" size="small" component="a" href={paper.file_url} target="_blank">View Evidence</Button>) : (<Typography variant="caption" color="text.secondary">No Evidence</Typography>)}
+                        </Box>
+                    ))
+                ) : <Typography variant="body2" sx={{ pl: 2 }}>None</Typography>}
+
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>Book Chapters Count:</Typography>
+                <Typography variant="body2" sx={{ pl: 2 }}>{data?.chapters_count || 'None'}</Typography>
+
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>Books Authored Status:</Typography>
+                <Typography variant="body2" sx={{ pl: 2 }}>{data?.prescribed_status || 'None'}</Typography>
+            </Box>
+
+            {/* HOD Rating Input */}
+            <Typography sx={{ fontWeight: 'bold', mb: 1 }} variant="body2">HOD Rating (HR)</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Papers indexed in Scopus/WoS/UGC</Typography>
+                    {safePapers.map((paper, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                            <TextField name="name" label={`Indexed Paper ${index + 1}`} value={paper.name || ''} onChange={(e) => handleDetailChange(e, index)} size="small" sx={{ flexGrow: 1 }} />
+                            <IconButton onClick={() => removePaper(index)} color="secondary" disabled={safePapers.length < 2}><RemoveCircleOutlineIcon /></IconButton>
+                        </Box>
+                    ))}
+                    <Button startIcon={<AddCircleOutlineIcon />} onClick={addPaper} size="small" variant="outlined">Add Indexed Paper</Button>
+                </Box>
+
+                <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Book Chapters Authored</Typography>
+                    <TextField type="number" name="chapters_count" label="No. of Book Chapters" value={safeData.chapters_count || ''} onChange={handleDetailChange} size="small" sx={{ width: 200 }} />
+                </Box>
+
+                <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Books Authored</Typography>
+                    <FormControl size="small" sx={{ width: 300 }}>
+                        <InputLabel>Status</InputLabel>
+                        <Select name="prescribed_status" value={safeData.prescribed_status || ''} label="Status" onChange={handleDetailChange}>
+                            <MenuItem value=""><em>None</em></MenuItem>
+                            <MenuItem value="two_plus">Prescribed by 2+ Universities</MenuItem>
+                            <MenuItem value="one">Prescribed by 1 University</MenuItem>
+                            <MenuItem value="authored">Authored (Not Prescribed)</MenuItem>
+                        </Select>
+                    </FormControl>
                 </Box>
             </Box>
-        </Box>
+        </Paper>
     );
 };
 

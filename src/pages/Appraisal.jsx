@@ -107,8 +107,25 @@ const Appraisal = () => {
             if (p2.section8d?.is_completed === 'yes') rawScore += 10;
         } else { // Normal Faculty
             if (parseInt(p2.section8a?.count || 0, 10) >= 1) rawScore += 40;
-            const { selectedOption, details } = p2.section8b || {};
-            switch (selectedOption) { case 'best_project': if (details?.place === '1') rawScore += 60; else if (details?.place === '2') rawScore += 55; else if (details?.place === '3') rawScore += 50; break; case 'exhibited': if (details?.status === 'won') rawScore += 60; else if (details?.status === 'exhibited') rawScore += 40; break; case 'funded': const funds = parseFloat(details?.amount || 0); if (funds >= 5000) rawScore += 60; else if (funds > 0) rawScore += 50; break; case 'publication': if (parseInt(details?.count || 0, 10) >= 1) rawScore += 60; break; default: break; }
+            
+            const s8b = p2.section8b || {};
+            let s8bScore = 0;
+            if (s8b.best_project_place === '1') s8bScore += 60;
+            else if (s8b.best_project_place === '2') s8bScore += 55;
+            else if (s8b.best_project_place === '3') s8bScore += 50;
+            
+            if (s8b.exhibited_status === 'won') s8bScore += 60;
+            else if (s8b.exhibited_status === 'exhibited') s8bScore += 40;
+            
+            const funds = parseFloat(s8b.funding_amount || 0);
+            if (funds >= 5000) s8bScore += 60;
+            else if (funds > 0 && funds < 5000) s8bScore += 50;
+            
+            const pubs = parseInt(s8b.publication_count || 0, 10);
+            if (pubs >= 1) s8bScore += 60;
+            
+            rawScore += Math.min(s8bScore, 60);
+
             const gradPercent = parseInt(p2.section8c_reg?.graduated_percent || 0, 10);
             if (gradPercent >= 90) rawScore += 30; else if (gradPercent >= 81) rawScore += 25; else if (gradPercent >= 71) rawScore += 20; else if (gradPercent >= 61) rawScore += 15;
         }
@@ -117,7 +134,59 @@ const Appraisal = () => {
     }, [part2Data, profile]);
 
     const totalPart3Score = useMemo(() => {
-        const d=part3Data||{};let rawScore=0;const journalCount=(d.journals||[]).filter(j=>j.name).length;if(journalCount>=2)rawScore+=20;else if(journalCount===1)rawScore+=15;const conferences=parseInt(d.conferences_presented||0,10);if(conferences>=3)rawScore+=20;else if(conferences===2)rawScore+=15;else if(conferences===1)rawScore+=10;const{selectedOption,details}=d.section10c||{};const totalJournals=(d.journals||[]).filter(j=>j.name).length;switch(selectedOption){case'scopus':const indexedPapers=(details?.papers||[]).filter(p=>p.name).length;if(totalJournals>0&&indexedPapers>0){rawScore+=Math.min(indexedPapers/totalJournals*40,40)}break;case'chapters':const chapters=parseInt(details?.chapters_count||0,10);if(chapters>=5)rawScore+=40;else if(chapters===4)rawScore+=35;else if(chapters===3)rawScore+=30;else if(chapters===2)rawScore+=25;else if(chapters===1)rawScore+=20;break;case'books':const prescribed=details?.prescribed_status||'';if(prescribed==='two_plus')rawScore+=40;else if(prescribed==='one')rawScore+=35;else if(prescribed==='authored')rawScore+=30;break;default:break}if(d.proposal_status==='submitted')rawScore+=20;if(d.project_amount==='above_4L')rawScore+=30;else if(d.project_amount==='1L_to_4L')rawScore+=25;else if(d.project_amount==='below_1L')rawScore+=20;if(d.consultancy_amount==='above_1L')rawScore+=20;else if(d.consultancy_amount==='below_1L')rawScore+=15;if(d.patent_status==='awarded')rawScore+=20;else if(d.patent_status==='applied')rawScore+=15;return Math.min(rawScore,170);
+        const d = part3Data || {};
+        let rawScore = 0;
+
+        // 10a. Journals
+        const journalCount = (d.journals || []).filter(j => j.name).length;
+        if (journalCount >= 2) rawScore += 20;
+        else if (journalCount === 1) rawScore += 15;
+
+        // 10b. Conferences
+        const conferences = parseInt(d.conferences_presented || 0, 10);
+        if (conferences >= 3) rawScore += 20;
+        else if (conferences === 2) rawScore += 15;
+        else if (conferences === 1) rawScore += 10;
+
+        // 10c. Indexed Papers / Book Chapters / Books Authored
+        const s10c = d.section10c || {};
+        let s10cScore = 0;
+        const totalJournals = (d.journals || []).filter(j => j.name).length;
+
+        const indexedPapersCount = (s10c.papers || []).filter(p => p.name).length;
+        if (totalJournals > 0 && indexedPapersCount > 0) {
+            s10cScore += (indexedPapersCount / totalJournals) * 40;
+        }
+
+        const chapters = parseInt(s10c.chapters_count || 0, 10); 
+        if (chapters >= 5) s10cScore += 40; 
+        else if (chapters === 4) s10cScore += 35; 
+        else if (chapters === 3) s10cScore += 30; 
+        else if (chapters === 2) s10cScore += 25; 
+        else if (chapters === 1) s10cScore += 20;
+
+        const prescribed = s10c.prescribed_status || ''; 
+        if (prescribed === 'two_plus') s10cScore += 40; 
+        else if (prescribed === 'one') s10cScore += 35; 
+        else if (prescribed === 'authored') s10cScore += 30;
+
+        rawScore += Math.min(s10cScore, 40);
+
+        // 11. Projects
+        if (d.proposal_status === 'submitted') rawScore += 20;
+        if (d.project_amount === 'above_4L') rawScore += 30;
+        else if (d.project_amount === '1L_to_4L') rawScore += 25;
+        else if (d.project_amount === 'below_1L') rawScore += 20;
+
+        // 12a. Consultancy
+        if (d.consultancy_amount === 'above_1L') rawScore += 20;
+        else if (d.consultancy_amount === 'below_1L') rawScore += 15;
+
+        // 12b. Patents
+        if (d.patent_status === 'awarded') rawScore += 20;
+        else if (d.patent_status === 'applied') rawScore += 15;
+
+        return Math.min(rawScore, 170);
     }, [part3Data]);
 
     const totalPart4Score = useMemo(() => {
