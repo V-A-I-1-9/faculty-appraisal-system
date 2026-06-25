@@ -17,7 +17,6 @@ const Part2_BSH_Sections = ({ data, setData, isHodView = false, hodData, setHodD
         const toppers = parseInt(d.topper_rank || 0, 10); 
         const verticalProg = parseInt(d.vertical_progression_percent || 0, 10); 
         
-        // --- CORRECTED LOGIC FOR 8c ---
         const fcdCount = parseInt(d.fcd_count || 0, 10);
         const totalMentees = parseInt(d.total_mentees || 0, 10);
         

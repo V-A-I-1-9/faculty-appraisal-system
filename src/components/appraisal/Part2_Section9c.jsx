@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import FileUpload from './FileUpload'; // Import our reusable component
 
 // Import MUI components for a cleaner layout
-import { Box, Typography, Button, TextField, IconButton } from '@mui/material';
+import { Box, Typography, Button, TextField, IconButton, Chip, Paper } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
@@ -79,8 +79,11 @@ const Part2_Section9c = ({ data, setData, isHodView = false, hodData, setHodData
     }
 
     return (
-        <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '5px' }}>
-            <h4>9.c. FDPs/Workshops/etc. conducted / coordinated</h4>
+        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>9.c. FDPs/Workshops/etc. conducted / coordinated</Typography>
+                <Chip label={`Score: ${apiScore} / 30`} color="primary" size="small" />
+            </Box>
             {programs.map((program, index) => (
                 <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                     <TextField
@@ -99,7 +102,7 @@ const Part2_Section9c = ({ data, setData, isHodView = false, hodData, setHodData
                         sectionName={`section9c`}
                         rowIndex={index}
                     />
-                    <IconButton onClick={() => removeProgram(index)} color="secondary" disabled={programs.length === 1}>
+                    <IconButton onClick={() => removeProgram(index)} color="error" disabled={programs.length === 1} size="small">
                         <RemoveCircleOutlineIcon />
                     </IconButton>
                 </Box>
@@ -107,9 +110,7 @@ const Part2_Section9c = ({ data, setData, isHodView = false, hodData, setHodData
             <Button startIcon={<AddCircleOutlineIcon />} onClick={addProgram} size="small">
                 Add Program
             </Button>
-            <hr style={{margin: '1rem 0'}} />
-            <p><strong>API Score for this section: {apiScore} / 30</strong></p>
-        </div>
+        </Paper>
     );
 };
 

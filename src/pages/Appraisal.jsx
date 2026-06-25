@@ -7,6 +7,7 @@ import { Box, Typography, Paper, Button, CircularProgress, Grid, Divider, Chip }
 import SaveIcon from '@mui/icons-material/Save';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 // --- FORM COMPONENT IMPORTS ---
 import Part2_Section7a from '../components/appraisal/Part2_Section7a';
@@ -135,11 +136,41 @@ const Appraisal = () => {
         else { if (showAlert) alert('Draft saved successfully!'); }
     };
 
+    const handleSaveAsPDF = () => {
+        window.print();
+    };
+
     const handleFinalSubmit = async () => {
         const confirmation=window.confirm("Are you sure you want to submit your appraisal?\nYou will not be able to make any changes after this.");
         if (confirmation) {
             await handleSaveDraft(false);
-            const { error } = await supabase.from('appraisals').update({ status: 'submitted_by_staff' }).eq('id', appraisalId);
+
+            let updateData = { status: 'submitted_by_staff' };
+
+            // If the user is an HOD, auto-finalize: copy SR → HR and compute final score
+            if (profile?.role === 'hod') {
+                const experience = (profile.service_years_mitm || 0) + (profile.previous_experience || 0);
+                const p2 = totalPart2Score / 350;
+                const p3 = totalPart3Score / 170;
+                const p4 = totalPart4Score / 180;
+                let finalScore = 0;
+                if (experience < 5) { finalScore = ((p2 * 0.70) + (p3 * 0.20) + (p4 * 0.10)) * 100; }
+                else if (experience >= 5 && experience < 10) { finalScore = ((p2 * 0.60) + (p3 * 0.25) + (p4 * 0.15)) * 100; }
+                else { finalScore = ((p2 * 0.50) + (p3 * 0.30) + (p4 * 0.20)) * 100; }
+
+                updateData = {
+                    status: 'reviewed_by_hod',
+                    part2_hr_data: part2Data,
+                    part3_hr_data: part3Data,
+                    part4_hr_data: part4Data,
+                    part2_hr_score: totalPart2Score,
+                    part3_hr_score: totalPart3Score,
+                    part4_hr_score: totalPart4Score,
+                    grand_api_score_final: finalScore,
+                };
+            }
+
+            const { error } = await supabase.from('appraisals').update(updateData).eq('id', appraisalId);
             if (error) { alert("Submission failed: " + error.message); }
             else { alert("Appraisal submitted successfully!"); navigate('/dashboard'); }
         }
@@ -167,34 +198,53 @@ const Appraisal = () => {
                 elevation={2}
                 sx={{ 
                     position: 'sticky', 
-                    top: 64, // Positioned below the main AppBar from Layout.jsx
+                    top: { xs: 56, sm: 64 },
                     zIndex: 10, 
-                    py: 1, 
-                    px: 3, 
+                    py: { xs: 1.5, md: 2 }, 
+                    px: { xs: 2, md: 3 }, 
                     mb: 4,
+                    '@media print': { display: 'none' }
                 }}
             >
-                <Grid container alignItems="center" justifyContent="space-between">
-                    <Grid item xs={12} md={5}>
-                        <Typography variant="h5">Faculty Self-Appraisal</Typography>
-                        <Typography variant="caption" color="text.secondary">{profile?.full_name} ({profile?.department?.name})</Typography>
-                    </Grid>
-                    <Grid item xs={6} md={3} sx={{ textAlign: 'center' }}>
-                        <Typography variant="h4" color="primary" sx={{ fontWeight: 600 }}>{grandApiScore.toFixed(2)}</Typography>
-                        <Typography variant="overline">Grand API Score</Typography>
-                    </Grid>
-                    <Grid item xs={6} md={4} sx={{ textAlign: 'right' }}>
-                        <Button onClick={() => handleSaveDraft()} startIcon={<SaveIcon />} sx={{ mr: 2 }} color="secondary" variant="outlined">Save Draft</Button>
-                        <Button onClick={handleFinalSubmit} startIcon={<UploadFileIcon />} variant="contained">Final Submit</Button>
-                    </Grid>
-                </Grid>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between', gap: 2 }}>
+                    <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 600, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>Faculty Self-Appraisal</Typography>
+                        <Typography variant="body2" color="text.secondary">{profile?.full_name} ({profile?.department?.name})</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 4 }, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'space-between', md: 'flex-end' } }}>
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="h4" color="primary" sx={{ fontWeight: 700, lineHeight: 1 }}>{grandApiScore.toFixed(2)}</Typography>
+                            <Typography variant="caption" sx={{ letterSpacing: 1, fontWeight: 500 }}>GRAND SCORE</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button onClick={() => handleSaveDraft()} startIcon={<SaveIcon />} color="secondary" variant="outlined" size="small">Save</Button>
+                            <Button onClick={handleSaveAsPDF} startIcon={<PictureAsPdfIcon />} color="error" variant="outlined" size="small">PDF</Button>
+                            <Button onClick={handleFinalSubmit} startIcon={<UploadFileIcon />} variant="contained" size="small">Submit</Button>
+                        </Box>
+                    </Box>
+                </Box>
             </Paper>
+
+            {/* --- Printable Header (Visible only on print) --- */}
+            <Box sx={{ display: 'none', '@media print': { display: 'block' }, mb: 4, pb: 2, borderBottom: '2px solid #ccc' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>Faculty Appraisal Report</Typography>
+                <Typography variant="subtitle1" sx={{ textAlign: 'center', mb: 3 }}>Assessment Year: {new Date().getFullYear()} - {new Date().getFullYear() + 1}</Typography>
+                <Grid container spacing={2}>
+                    <Grid item xs={6}><Typography><strong>Name:</strong> {profile?.full_name}</Typography></Grid>
+                    <Grid item xs={6}><Typography><strong>Staff ID:</strong> {profile?.staff_id || 'N/A'}</Typography></Grid>
+                    <Grid item xs={6}><Typography><strong>Designation:</strong> {profile?.present_designation || 'N/A'}</Typography></Grid>
+                    <Grid item xs={6}><Typography><strong>Department:</strong> {profile?.department?.name || 'N/A'}</Typography></Grid>
+                </Grid>
+                <Box sx={{ mt: 3, textAlign: 'right' }}>
+                    <Typography variant="h6" color="primary"><strong>Grand API Score: {grandApiScore.toFixed(2)}</strong></Typography>
+                </Box>
+            </Box>
 
             {/* --- Main Form Content --- */}
                 <Box>
                     {/* Part II Card */}
                     <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                             <Typography variant="h6" component="h2">Part II: Teaching, Learning and Evaluation</Typography>
                             <Chip label={`Score: ${totalPart2Score.toFixed(2)} / 350`} color="primary" />
                         </Box>
@@ -222,7 +272,7 @@ const Appraisal = () => {
 
                     {/* Part III Card */}
                     <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                             <Typography variant="h6" component="h2">Part III: R&D Contributions</Typography>
                             <Chip label={`Score: ${totalPart3Score.toFixed(2)} / 170`} color="primary" />
                         </Box>
@@ -235,7 +285,7 @@ const Appraisal = () => {
 
                     {/* Part IV Card */}
                     <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                             <Typography variant="h6" component="h2">Part IV: Administration & Contribution</Typography>
                             <Chip label={`Score: ${totalPart4Score.toFixed(2)} / 180`} color="primary" />
                         </Box>

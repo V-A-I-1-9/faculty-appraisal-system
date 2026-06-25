@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Box, Typography, TextField, Chip, Paper, Grid } from '@mui/material';
 
 const Part2_Section7d = ({ data, setData, isHodView = false, hodData, setHodData, passPercentages, hodPassPercentages }) => {
     
@@ -33,19 +34,28 @@ const Part2_Section7d = ({ data, setData, isHodView = false, hodData, setHodData
     // Staff View
     if(!isHodView) {
         return (
-            <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '5px' }}>
-                <h4>7.d. % of Students scoring ≥ 60%</h4>
-                <p>Note: This section corresponds to the subjects added in section 7.a.</p>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>7.d. % of Students scoring ≥ 60%</Typography>
+                    <Chip label={`Avg Score: ${staffApiScores.averageScore.toFixed(2)} / 40`} color="primary" size="small" />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Note: This section corresponds to the subjects added in section 7.a.</Typography>
                 {(data || []).map((subject, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-                        <input type="text" name="code" placeholder="Subject Code" value={subject.code} readOnly disabled />
-                        <input type="number" name="high_scorers_percent" placeholder="% scoring >= 60" value={subject.high_scorers_percent || ''} onChange={e => handleSubjectChange(index, e)} />
-                        <span>API Score: {staffApiScores.scores[index]?.toFixed(2) || 0}</span>
-                    </div>
+                    <Paper key={index} variant="outlined" sx={{ p: 1.5, mb: 1.5, backgroundColor: '#fafafa' }}>
+                        <Grid container spacing={1.5} alignItems="center">
+                            <Grid item xs={12} sm={4}>
+                                <TextField name="code" label="Subject Code" value={subject.code} disabled fullWidth size="small" />
+                            </Grid>
+                            <Grid item xs={6} sm={4}>
+                                <TextField type="number" name="high_scorers_percent" label="% scoring ≥ 60" value={subject.high_scorers_percent || ''} onChange={e => handleSubjectChange(index, e)} fullWidth size="small" />
+                            </Grid>
+                            <Grid item xs={6} sm={4}>
+                                <Chip label={`Score: ${staffApiScores.scores[index]?.toFixed(2) || '0.00'}`} variant="outlined" size="small" sx={{ width: '100%' }} />
+                            </Grid>
+                        </Grid>
+                    </Paper>
                 ))}
-                <hr />
-                <p><strong>Average API Score for this section: {staffApiScores.averageScore.toFixed(2)} / 40</strong></p>
-            </div>
+            </Paper>
         );
     }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Box, Typography, TextField, Chip, Paper, Grid, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 // This version contains the complete code for BOTH the Staff's view and the HOD's review view.
 const Part4_Sections = ({ data, setData, isHodView = false, hodData, setHodData }) => {
@@ -19,43 +20,67 @@ const Part4_Sections = ({ data, setData, isHodView = false, hodData, setHodData 
     };
 
     // --- STAFF VIEW ---
-    // If it's the staff filling out the form, render this original layout.
     if (!isHodView) {
+        const ScoreInput = ({ label, name, max, value }) => (
+            <Grid item xs={12} md={6}>
+                <Box sx={{ mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>{label} (Max {max})</Typography>
+                    <TextField
+                        type="number"
+                        name={name}
+                        value={value || ''}
+                        onChange={handleChange}
+                        inputProps={{ max, min: 0 }}
+                        size="small"
+                        fullWidth
+                    />
+                </Box>
+            </Grid>
+        );
+
         return (
-            <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '5px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'center' }}>
-                    <div><label><strong>13.a.</strong> Punctuality (Max 10)</label><input type="number" max="10" name="punctuality_13a" value={data?.punctuality_13a || ''} onChange={handleChange} /></div>
-                    <div><label><strong>13.b.</strong> Behavior and Conduct (Max 15)</label><input type="number" max="15" name="behavior_13b" value={data?.behavior_13b || ''} onChange={handleChange} /></div>
-                    <div><label><strong>13.c.</strong> Performance on assigned jobs (Max 15)</label><input type="number" max="15" name="performance_13c" value={data?.performance_13c || ''} onChange={handleChange} /></div>
-                    <div><label><strong>13.d.</strong> Upholding Institute's Culture (Max 15)</label><input type="number" max="15" name="culture_13d" value={data?.culture_13d || ''} onChange={handleChange} /></div>
-                    <div><label><strong>13.e.</strong> Mentoring Efficacy (Max 20)</label><input type="number" max="20" name="mentoring_13e" value={data?.mentoring_13e || ''} onChange={handleChange} /></div>
-                    <div><label><strong>13.f.</strong> Team-man-ship (Max 15)</label><input type="number" max="15" name="teamwork_13f" value={data?.teamwork_13f || ''} onChange={handleChange} /></div>
-                    <div><label><strong>14.a.</strong> Academic Preparedness: Course File (Max 30)</label><input type="number" max="30" name="preparedness_14a" value={data?.preparedness_14a || ''} onChange={handleChange} /></div>
-                    <div><label><strong>14.b.</strong> Academic Assessment Efficacy (Max 20)</label><input type="number" max="20" name="assessment_14b" value={data?.assessment_14b || ''} onChange={handleChange} /></div>
-                    <div>
-                        <label><strong>14.c.</strong> Student Activities organized (Max 20)</label>
-                        <select name="activities_14c" value={data?.activities_14c || ''} onChange={handleSelectChange}>
-                            <option value="">Select Type</option>
-                            <option value="co_collab">Co-curricular & Collaborative</option>
-                            <option value="co_ind">Co-curricular & Individual</option>
-                            <option value="extra_collab">Extra-curricular & Collaborative</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label><strong>15.a.</strong> Add-on Responsibilities (Max 20)</label>
-                        <select name="responsibilities_15a" value={data?.responsibilities_15a || ''} onChange={handleSelectChange}>
-                            <option value="">Select Option</option>
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+                <Grid container spacing={2.5}>
+                    <ScoreInput label="13.a. Punctuality" name="punctuality_13a" max={10} value={data?.punctuality_13a} />
+                    <ScoreInput label="13.b. Behavior and Conduct" name="behavior_13b" max={15} value={data?.behavior_13b} />
+                    <ScoreInput label="13.c. Performance on assigned jobs" name="performance_13c" max={15} value={data?.performance_13c} />
+                    <ScoreInput label="13.d. Upholding Institute's Culture" name="culture_13d" max={15} value={data?.culture_13d} />
+                    <ScoreInput label="13.e. Mentoring Efficacy" name="mentoring_13e" max={20} value={data?.mentoring_13e} />
+                    <ScoreInput label="13.f. Team-man-ship" name="teamwork_13f" max={15} value={data?.teamwork_13f} />
+                    <ScoreInput label="14.a. Academic Preparedness: Course File" name="preparedness_14a" max={30} value={data?.preparedness_14a} />
+                    <ScoreInput label="14.b. Academic Assessment Efficacy" name="assessment_14b" max={20} value={data?.assessment_14b} />
+                    
+                    <Grid item xs={12} md={6}>
+                        <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>14.c. Student Activities organized (Max 20)</Typography>
+                            <FormControl fullWidth size="small">
+                                <Select name="activities_14c" value={data?.activities_14c || ''} onChange={handleSelectChange} displayEmpty>
+                                    <MenuItem value=""><em>Select Type</em></MenuItem>
+                                    <MenuItem value="co_collab">Co-curricular & Collaborative</MenuItem>
+                                    <MenuItem value="co_ind">Co-curricular & Individual</MenuItem>
+                                    <MenuItem value="extra_collab">Extra-curricular & Collaborative</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>15.a. Add-on Responsibilities (Max 20)</Typography>
+                            <FormControl fullWidth size="small">
+                                <Select name="responsibilities_15a" value={data?.responsibilities_15a || ''} onChange={handleSelectChange} displayEmpty>
+                                    <MenuItem value=""><em>Select Option</em></MenuItem>
+                                    <MenuItem value="yes">Yes</MenuItem>
+                                    <MenuItem value="no">No</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Paper>
         );
     }
 
     // --- HOD VIEW ---
-    // If it's the HOD reviewing the form, render this two-column layout.
     const renderInput = (label, name, max) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center' }}>
             <label><strong>{label}</strong> (Max {max})</label>

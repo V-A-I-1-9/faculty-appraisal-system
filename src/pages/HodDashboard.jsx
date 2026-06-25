@@ -9,6 +9,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import PersonIcon from '@mui/icons-material/Person';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import Divider from '@mui/material/Divider';
 
 const HodDashboard = () => {
     const navigate = useNavigate();
@@ -16,9 +18,26 @@ const HodDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [myAppraisalInfo, setMyAppraisalInfo] = useState({ status: 'Not Started', id: null });
 
     useEffect(() => {
         const fetchData = async () => {
+            // Fetch the HOD's own appraisal status
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const currentYear = new Date().getFullYear();
+                const { data: myAppraisal } = await supabase
+                    .from('appraisals')
+                    .select('id, status')
+                    .eq('user_id', user.id)
+                    .eq('assessment_year_start', currentYear)
+                    .single();
+                if (myAppraisal) {
+                    setMyAppraisalInfo({ status: myAppraisal.status, id: myAppraisal.id });
+                }
+            }
+
+            // Fetch department staff appraisals (existing logic)
             const { data, error } = await supabase
                 .from('profiles')
                 .select(`*, department:departments(name), appraisals(id, status, assessment_year_start)`)
@@ -75,14 +94,53 @@ const HodDashboard = () => {
         );
     }
     
+    // Helper to get the status chip for the HOD's own appraisal
+    const getMyAppraisalChip = () => {
+        switch (myAppraisalInfo.status) {
+            case 'draft':
+                return <Chip icon={<PendingIcon />} label="In Progress (Draft)" color="primary" />;
+            case 'submitted_by_staff':
+                return <Chip icon={<CheckCircleIcon />} label="Submitted to Principal" color="success" />;
+            case 'reviewed_by_hod':
+                return <Chip icon={<CheckCircleIcon />} label="Review Complete" color="secondary" />;
+            default:
+                return <Chip icon={<HourglassEmptyIcon />} label="Not Started" variant="outlined" />;
+        }
+    };
+
     return (
         <Box>
             <Typography variant="h4" component="h1" gutterBottom>
                 HOD Dashboard
             </Typography>
-            <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
+            <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
                 Review and manage the appraisals for your department faculty.
             </Typography>
+
+            {/* --- MY APPRAISAL CARD --- */}
+            <Paper sx={{ p: 3, mb: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                    <Box>
+                        <Typography variant="h6" component="h2">My Appraisal</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Status:</Typography>
+                            {getMyAppraisalChip()}
+                        </Box>
+                    </Box>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={<EditNoteIcon />}
+                        onClick={() => navigate('/appraisal')}
+                        disabled={myAppraisalInfo.status === 'submitted_by_staff' || myAppraisalInfo.status === 'reviewed_by_hod'}
+                    >
+                        {myAppraisalInfo.status === 'Not Started' ? 'Start Appraisal' : myAppraisalInfo.status === 'draft' ? 'Continue Appraisal' : 'View Appraisal'}
+                    </Button>
+                </Box>
+            </Paper>
+
+            <Divider sx={{ mb: 3 }} />
+            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Department Faculty Appraisals</Typography>
 
             <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 650 }} aria-label="faculty table">

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Box, Typography, Chip, Paper, TextField, FormControl, InputLabel, Select, MenuItem, RadioGroup, FormControlLabel, Radio, FormLabel } from '@mui/material';
 
 const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData }) => {
 
@@ -28,32 +29,62 @@ const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData
     const renderDetailFields = (isForHod) => {
         const currentData = isForHod ? hodData : data;
         const changeHandler = handleDetailChange;
-        
-        // --- THIS IS THE CORRECTED LOGIC ---
-        // The fields should only be disabled if it's the HOD view AND we are rendering the SR (staff) side.
         const isDisabled = isHodView && !isForHod;
 
         switch (currentData?.selectedOption) {
-            case 'best_project': return (<select name="place" value={currentData.details?.place || ''} onChange={changeHandler} disabled={isDisabled}><option value="">Select Place</option><option value="1">1st Place</option><option value="2">2nd Place</option><option value="3">3rd Place</option></select>);
-            case 'exhibited': return (<select name="status" value={currentData.details?.status || ''} onChange={changeHandler} disabled={isDisabled}><option value="">Select Status</option><option value="won">Won in Competition</option><option value="exhibited">Only Exhibited</option></select>);
-            case 'funded': return <input type="number" name="amount" placeholder="Funding Amount (INR)" value={currentData.details?.amount || ''} onChange={changeHandler} disabled={isDisabled} />;
-            case 'publication': return <input type="number" name="count" placeholder="No. of Publications" value={currentData.details?.count || ''} onChange={changeHandler} disabled={isDisabled} />;
-            default: return <span style={{color: '#888'}}>Select an option to add details.</span>;
+            case 'best_project': 
+                if (!isHodView) return (
+                    <FormControl size="small" sx={{ minWidth: 200, mt: 1 }}>
+                        <InputLabel>Place Won</InputLabel>
+                        <Select name="place" value={currentData.details?.place || ''} label="Place Won" onChange={changeHandler} disabled={isDisabled}>
+                            <MenuItem value=""><em>Select Place</em></MenuItem>
+                            <MenuItem value="1">1st Place</MenuItem>
+                            <MenuItem value="2">2nd Place</MenuItem>
+                            <MenuItem value="3">3rd Place</MenuItem>
+                        </Select>
+                    </FormControl>
+                );
+                return (<select name="place" value={currentData.details?.place || ''} onChange={changeHandler} disabled={isDisabled}><option value="">Select Place</option><option value="1">1st Place</option><option value="2">2nd Place</option><option value="3">3rd Place</option></select>);
+            case 'exhibited': 
+                if (!isHodView) return (
+                    <FormControl size="small" sx={{ minWidth: 200, mt: 1 }}>
+                        <InputLabel>Status</InputLabel>
+                        <Select name="status" value={currentData.details?.status || ''} label="Status" onChange={changeHandler} disabled={isDisabled}>
+                            <MenuItem value=""><em>Select Status</em></MenuItem>
+                            <MenuItem value="won">Won in Competition</MenuItem>
+                            <MenuItem value="exhibited">Only Exhibited</MenuItem>
+                        </Select>
+                    </FormControl>
+                );
+                return (<select name="status" value={currentData.details?.status || ''} onChange={changeHandler} disabled={isDisabled}><option value="">Select Status</option><option value="won">Won in Competition</option><option value="exhibited">Only Exhibited</option></select>);
+            case 'funded': 
+                if (!isHodView) return (<TextField type="number" name="amount" label="Funding Amount (INR)" value={currentData.details?.amount || ''} onChange={changeHandler} disabled={isDisabled} size="small" sx={{ mt: 1, maxWidth: 300 }} />);
+                return <input type="number" name="amount" placeholder="Funding Amount (INR)" value={currentData.details?.amount || ''} onChange={changeHandler} disabled={isDisabled} />;
+            case 'publication': 
+                if (!isHodView) return (<TextField type="number" name="count" label="No. of Publications" value={currentData.details?.count || ''} onChange={changeHandler} disabled={isDisabled} size="small" sx={{ mt: 1, maxWidth: 300 }} />);
+                return <input type="number" name="count" placeholder="No. of Publications" value={currentData.details?.count || ''} onChange={changeHandler} disabled={isDisabled} />;
+            default: return <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Select an option above to add details.</Typography>;
         }
     };
 
     if (!isHodView) {
         return (
-            <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '5px' }}>
-                <h4>8.b. Best Project Awards / Publications / Funding</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div><input type="radio" id="opt_best_project" name="section8b_option" value="best_project" checked={data?.selectedOption === 'best_project'} onChange={handleOptionChange} /><label htmlFor="opt_best_project"> Best Projects Awarded</label></div>
-                    <div><input type="radio" id="opt_exhibited" name="section8b_option" value="exhibited" checked={data?.selectedOption === 'exhibited'} onChange={handleOptionChange} /><label htmlFor="opt_exhibited"> Student Project Exhibited</label></div>
-                    <div><input type="radio" id="opt_funded" name="section8b_option" value="funded" checked={data?.selectedOption === 'funded'} onChange={handleOptionChange} /><label htmlFor="opt_funded"> Funded by External Agency</label></div>
-                    <div><input type="radio" id="opt_publication" name="section8b_option" value="publication" checked={data?.selectedOption === 'publication'} onChange={handleOptionChange} /><label htmlFor="opt_publication"> Student Project Paper Publication(s)</label></div>
-                </div>
-                <div style={{ marginTop: '1rem' }}>{renderDetailFields(false)}</div><hr /><p><strong>API Score for this section: {apiScore} / 60</strong></p>
-            </div>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>8.b. Best Project Awards / Publications / Funding</Typography>
+                    <Chip label={`Score: ${apiScore} / 60`} color="primary" size="small" />
+                </Box>
+                <FormControl component="fieldset">
+                    <FormLabel component="legend" sx={{ fontSize: '0.875rem', mb: 0.5 }}>Select one category:</FormLabel>
+                    <RadioGroup value={data?.selectedOption || ''} onChange={handleOptionChange}>
+                        <FormControlLabel value="best_project" control={<Radio size="small" />} label="Best Projects Awarded" />
+                        <FormControlLabel value="exhibited" control={<Radio size="small" />} label="Student Project Exhibited" />
+                        <FormControlLabel value="funded" control={<Radio size="small" />} label="Funded by External Agency" />
+                        <FormControlLabel value="publication" control={<Radio size="small" />} label="Student Project Paper Publication(s)" />
+                    </RadioGroup>
+                </FormControl>
+                <Box>{renderDetailFields(false)}</Box>
+            </Paper>
         );
     }
     

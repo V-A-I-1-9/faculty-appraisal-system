@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Box, Typography, Chip, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 const Part2_Section8d = ({ data, setData, isHodView = false, hodData, setHodData }) => {
     const apiScore = useMemo(() => {
@@ -12,17 +13,20 @@ const Part2_Section8d = ({ data, setData, isHodView = false, hodData, setHodData
 
     if (!isHodView) {
         return (
-            <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '5px' }}>
-                <h4>8.d. No. of UG/PG projects Co-guided</h4>
-                <label>Is project completed?</label>
-                <select name="is_completed" value={data?.is_completed || ''} onChange={handleChange}>
-                    <option value="">Select Status</option>
-                    <option value="yes">Yes, Completed</option>
-                    <option value="no">No</option>
-                </select>
-                <hr />
-                <p><strong>API Score for this section: {apiScore} / 10</strong></p>
-            </div>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>8.d. No. of UG/PG projects Co-guided</Typography>
+                    <Chip label={`Score: ${apiScore} / 10`} color="primary" size="small" />
+                </Box>
+                <FormControl size="small" sx={{ minWidth: 250 }}>
+                    <InputLabel>Is project completed?</InputLabel>
+                    <Select name="is_completed" value={data?.is_completed || ''} label="Is project completed?" onChange={handleChange}>
+                        <MenuItem value=""><em>Select Status</em></MenuItem>
+                        <MenuItem value="yes">Yes, Completed</MenuItem>
+                        <MenuItem value="no">No</MenuItem>
+                    </Select>
+                </FormControl>
+            </Paper>
         );
     }
 

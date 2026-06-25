@@ -1,4 +1,5 @@
 import React from 'react';
+import { Box, Typography, TextField, Chip, Paper } from '@mui/material';
 
 const Part2_Section9b = ({ data, setData, isHodView = false, hodData, setHodData }) => {
     
@@ -10,13 +11,22 @@ const Part2_Section9b = ({ data, setData, isHodView = false, hodData, setHodData
 
     if (!isHodView) {
         return (
-            <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '5px' }}>
-                <h4>9.b. Use of ICT in TLP (Teaching Learning Process)</h4>
-                <label>Self-Rating (Max 35)</label>
-                <input type="number" name="score" value={data?.score || ''} max="35" onChange={handleChange} />
-                <hr />
-                <p><strong>API Score for this section: {data?.score || 0} / 35</strong></p>
-            </div>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>9.b. Use of ICT in TLP (Teaching Learning Process)</Typography>
+                    <Chip label={`Score: ${data?.score || 0} / 35`} color="primary" size="small" />
+                </Box>
+                <TextField
+                    type="number"
+                    label="Self-Rating (Max 35)"
+                    value={data?.score || ''}
+                    onChange={handleChange}
+                    inputProps={{ max: 35, min: 0 }}
+                    size="small"
+                    fullWidth
+                    sx={{ maxWidth: 350 }}
+                />
+            </Paper>
         );
     }
 

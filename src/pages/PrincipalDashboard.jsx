@@ -211,7 +211,8 @@ const PrincipalDashboard = () => {
                                 <TableRow key={appraisal.id} hover sx={{ backgroundColor: getCategoryRowColor(appraisal.category) }}>
                                     <TableCell>
                                         {appraisal.profile.full_name}
-                                        {isBest && <Chip icon={<StarIcon />} label="Best Faculty" color="success" size="small" sx={{ ml: 2 }} />}
+                                        {appraisal.profile.role === 'hod' && <Chip label="HOD" color="info" size="small" sx={{ ml: 1 }} />}
+                                        {isBest && <Chip icon={<StarIcon />} label="Best Faculty" color="success" size="small" sx={{ ml: 1 }} />}
                                     </TableCell>
                                     <TableCell>{appraisal.profile.department.name}</TableCell>
                                     <TableCell sx={{ fontWeight: 'bold' }}>{appraisal.grand_api_score_final?.toFixed(2) || 'N/A'}</TableCell>
