@@ -65,7 +65,7 @@ const Layout = () => {
                     Designed & Developed by Vaibhav MS, Dept. of ISE, MIT Mysore.
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                    Contact for support: msvaibhav007@gmail.com
+                    Contact for support: msvaibhav007@gmail.com | 7892471348
                 </Typography>
             </Box>
         </Box>

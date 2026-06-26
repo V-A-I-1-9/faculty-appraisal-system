@@ -210,7 +210,7 @@ const Appraisal = () => {
     };
 
     const handleFinalSubmit = async () => {
-        const confirmation=window.confirm("Are you sure you want to submit your appraisal?\nYou will not be able to make any changes after this.");
+        const confirmation=window.confirm("Are you sure you want to submit your appraisal?\nThe form cannot be edited once submitted.");
         if (confirmation) {
             await handleSaveDraft(false);
 
