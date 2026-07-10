@@ -3,8 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 // Import MUI components for the new design
-import { Box, Typography, Paper, Button, CircularProgress, Grid, Divider, TextField, Chip, Avatar } from '@mui/material';
+import { Box, Typography, Paper, Button, CircularProgress, Grid, Divider, TextField, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { toast } from 'react-toastify';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/Edit';
+import LockIcon from '@mui/icons-material/Lock';
 
 const PrincipalView = () => {
     const { appraisalId } = useParams();
@@ -14,6 +17,12 @@ const PrincipalView = () => {
 
     // State for Principal's own remarks
     const [principalRemarks, setPrincipalRemarks] = useState('');
+    // Track if remarks already existed when the page loaded (i.e. review was completed before)
+    const [hasExistingRemarks, setHasExistingRemarks] = useState(false);
+    // Whether the text field is in edit mode (unlocked)
+    const [isEditing, setIsEditing] = useState(false);
+    // Confirmation dialog state
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchAppraisal = async () => {
@@ -25,22 +34,30 @@ const PrincipalView = () => {
             } else {
                 setAppraisalData(data);
                 setPrincipalRemarks(data.principal_remarks || '');
+                // If remarks already exist, start in read-only (locked) mode
+                if (data.principal_remarks && data.principal_remarks.trim() !== '') {
+                    setHasExistingRemarks(true);
+                    setIsEditing(false);
+                } else {
+                    // No remarks yet — start in edit mode
+                    setHasExistingRemarks(false);
+                    setIsEditing(true);
+                }
             }
             setLoading(false);
         };
         fetchAppraisal();
     }, [appraisalId]);
+
     // --- Faculty Category Calculation ---
     const facultyCategory = useMemo(() => {
         if (!appraisalData || !appraisalData.grand_api_score_final) return 'N/A';
         
-        // The category is based on the FINAL HOD-reviewed scores.
         const p2_hr = appraisalData.part2_hr_score;
         const p3_hr = appraisalData.part3_hr_score;
         const p4_hr = appraisalData.part4_hr_score;
         const grand_score = appraisalData.grand_api_score_final;
 
-        // Calculate percentage of allotted marks for each part
         const p2_percent = (p2_hr / 350) * 100;
         const p3_percent = (p3_hr / 170) * 100;
         const p4_percent = (p4_hr / 180) * 100;
@@ -65,12 +82,27 @@ const PrincipalView = () => {
             toast.error("Error saving remarks: " + error.message);
         } else {
             toast.success("Principal's remarks saved successfully!");
+            setHasExistingRemarks(true);
+            setIsEditing(false);
         }
+    };
+
+    const handleEditClick = () => {
+        setEditDialogOpen(true);
+    };
+
+    const handleConfirmEdit = () => {
+        setEditDialogOpen(false);
+        setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setEditDialogOpen(false);
     };
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress /></Box>;
     if (error) return <div><p style={{color: 'red'}}>{error}</p><Link to="/principal-dashboard">Back to Dashboard</Link></div>;
-    // Helper function to determine the color of the category chip
+
     const getCategoryChipColor = (category) => {
         switch (category) {
             case 'A':
@@ -172,26 +204,89 @@ const PrincipalView = () => {
                             />
                         </Box>
                         <Divider sx={{ my: 2 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Principal's Remarks</Typography>
-                        <TextField
-                            label="Add your final remarks here"
-                            multiline
-                            rows={4}
-                            fullWidth
-                            value={principalRemarks}
-                            onChange={(e) => setPrincipalRemarks(e.target.value)}
-                        />
-                        <Button
-                            variant="contained"
-                            fullWidth
-                            sx={{ mt: 2 }}
-                            onClick={handleSaveRemarks}
-                        >
-                            Save Remarks
-                        </Button>
+
+                        {/* Principal's Remarks Section */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Principal's Remarks</Typography>
+                            {hasExistingRemarks && !isEditing && (
+                                <Chip icon={<CheckCircleIcon />} label="Review Complete" color="success" size="small" />
+                            )}
+                        </Box>
+
+                        {/* Read-only view (when remarks exist and not editing) */}
+                        {hasExistingRemarks && !isEditing ? (
+                            <Box>
+                                <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'action.hover', borderColor: 'success.light' }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                                        {principalRemarks}
+                                    </Typography>
+                                </Paper>
+                                <Button
+                                    variant="outlined"
+                                    fullWidth
+                                    startIcon={<EditIcon />}
+                                    onClick={handleEditClick}
+                                    color="warning"
+                                >
+                                    Edit Remarks
+                                </Button>
+                            </Box>
+                        ) : (
+                            /* Edit mode (new remarks or unlocked for editing) */
+                            <Box>
+                                <TextField
+                                    label="Add your final remarks here"
+                                    multiline
+                                    rows={4}
+                                    fullWidth
+                                    value={principalRemarks}
+                                    onChange={(e) => setPrincipalRemarks(e.target.value)}
+                                />
+                                <Button
+                                    variant="contained"
+                                    fullWidth
+                                    sx={{ mt: 2 }}
+                                    onClick={handleSaveRemarks}
+                                    disabled={!principalRemarks.trim()}
+                                >
+                                    Save Remarks
+                                </Button>
+                                {hasExistingRemarks && (
+                                    <Button
+                                        variant="text"
+                                        fullWidth
+                                        sx={{ mt: 1 }}
+                                        onClick={() => {
+                                            setPrincipalRemarks(appraisalData?.principal_remarks || '');
+                                            setIsEditing(false);
+                                        }}
+                                        color="inherit"
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
+                            </Box>
+                        )}
                     </Paper>
                 </Grid>
             </Grid>
+
+            {/* Edit Confirmation Dialog */}
+            <Dialog open={editDialogOpen} onClose={handleCancelEdit}>
+                <DialogTitle>Edit Remarks?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        You have already completed the review for <strong>{appraisalData?.profile?.full_name}</strong>. 
+                        Do you want to edit your remarks?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelEdit} color="inherit">Cancel</Button>
+                    <Button onClick={handleConfirmEdit} variant="contained" color="warning" startIcon={<EditIcon />}>
+                        Yes, Edit Remarks
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
