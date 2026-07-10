@@ -34,6 +34,10 @@ const Appraisal = () => {
     const [part2Data, setPart2Data] = useState({});
     const [part3Data, setPart3Data] = useState({});
     const [part4Data, setPart4Data] = useState({});
+    const [hodRemarks, setHodRemarks] = useState(null);
+    const [principalRemarks, setPrincipalRemarks] = useState('');
+    const [hrScores, setHrScores] = useState(null);
+    const [finalApiScore, setFinalApiScore] = useState(null);
 
     const loadOrCreateAppraisal = useCallback(async () => {
         setLoading(true);
@@ -58,6 +62,29 @@ const Appraisal = () => {
     }, []);
 
     useEffect(() => { loadOrCreateAppraisal(); }, [loadOrCreateAppraisal]);
+
+    // Fetch remarks & HR scores when appraisal is submitted
+    useEffect(() => {
+        const fetchRemarks = async () => {
+            if (!appraisalId || !isSubmitted) return;
+            const { data } = await supabase
+                .from('appraisals')
+                .select('hod_remarks, principal_remarks, part2_hr_score, part3_hr_score, part4_hr_score, grand_api_score_final, status')
+                .eq('id', appraisalId)
+                .single();
+            if (data) {
+                setHodRemarks(data.hod_remarks || null);
+                setPrincipalRemarks(data.principal_remarks || '');
+                setHrScores({
+                    part2: data.part2_hr_score,
+                    part3: data.part3_hr_score,
+                    part4: data.part4_hr_score,
+                });
+                setFinalApiScore(data.grand_api_score_final);
+            }
+        };
+        fetchRemarks();
+    }, [appraisalId, isSubmitted]);
 
     const totalPart2Score = useMemo(() => {
         const p2 = part2Data || {};
@@ -250,13 +277,214 @@ const Appraisal = () => {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><CircularProgress /></Box>;
     }
 
+    // Determine the display status for submitted appraisals
+    const getSubmittedStatusInfo = () => {
+        if (!isSubmitted) return null;
+        // We stored the raw status in loadOrCreateAppraisal
+        // Check if we have HR scores to determine if HOD has reviewed
+        if (finalApiScore != null && hodRemarks) {
+            return { label: 'Reviewed by HOD', color: 'secondary' };
+        }
+        return { label: 'Submitted — Awaiting HOD Review', color: 'success' };
+    };
+
     if (isSubmitted) {
+        const statusInfo = getSubmittedStatusInfo();
         return (
-            <Paper sx={{ p: 4, textAlign: 'center', mt: 4, maxWidth: 600, mx: 'auto' }}>
-                <CheckCircleIcon color="success" sx={{ fontSize: 60, mb: 2 }} />
-                <Typography variant="h5" gutterBottom>This appraisal has been submitted.</Typography>
-                <Typography color="text.secondary">No further edits can be made. You will be notified once the review process is complete.</Typography>
-            </Paper>
+            <Box>
+                {/* --- Read-Only Header --- */}
+                <Paper 
+                    elevation={2}
+                    sx={{ 
+                        position: 'sticky', 
+                        top: { xs: 56, sm: 64 },
+                        zIndex: 10, 
+                        py: { xs: 1.5, md: 2 }, 
+                        px: { xs: 2, md: 3 }, 
+                        mb: 4,
+                        '@media print': { display: 'none' }
+                    }}
+                >
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between', gap: 2 }}>
+                        <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                                <Typography variant="h5" sx={{ fontWeight: 600, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>Faculty Self-Appraisal</Typography>
+                                <Chip icon={<CheckCircleIcon />} label="Submitted" color="success" size="small" />
+                            </Box>
+                            <Typography variant="body2" color="text.secondary">{profile?.full_name} ({profile?.department?.name})</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 4 }, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'space-between', md: 'flex-end' } }}>
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="h4" color="primary" sx={{ fontWeight: 700, lineHeight: 1 }}>{grandApiScore.toFixed(2)}</Typography>
+                                <Typography variant="caption" sx={{ letterSpacing: 1, fontWeight: 500 }}>YOUR SCORE</Typography>
+                            </Box>
+                            {finalApiScore != null && (
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="h4" color="secondary" sx={{ fontWeight: 700, lineHeight: 1 }}>{finalApiScore.toFixed(2)}</Typography>
+                                    <Typography variant="caption" sx={{ letterSpacing: 1, fontWeight: 500 }}>HOD SCORE</Typography>
+                                </Box>
+                            )}
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Button onClick={handleSaveAsPDF} startIcon={<PictureAsPdfIcon />} color="error" variant="outlined" size="small">PDF</Button>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Paper>
+
+                {/* --- HOD & Principal Remarks Section — always visible --- */}
+                <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
+                        Review Remarks
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                            <Paper variant="outlined" sx={{ p: 2.5, height: '100%', bgcolor: hodRemarks && (hodRemarks.strengths || hodRemarks.concerns || hodRemarks.suggestions) ? 'action.hover' : 'transparent' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: hodRemarks && (hodRemarks.strengths || hodRemarks.concerns || hodRemarks.suggestions) ? 'secondary.main' : 'text.secondary' }}>
+                                    HOD's Remarks
+                                </Typography>
+                                {hodRemarks && (hodRemarks.strengths || hodRemarks.concerns || hodRemarks.suggestions) ? (
+                                    <>
+                                        {hodRemarks.strengths && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Strengths:</Typography>
+                                                <Typography variant="body2" color="text.secondary">{hodRemarks.strengths}</Typography>
+                                            </Box>
+                                        )}
+                                        {hodRemarks.concerns && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Concerns:</Typography>
+                                                <Typography variant="body2" color="text.secondary">{hodRemarks.concerns}</Typography>
+                                            </Box>
+                                        )}
+                                        {hodRemarks.suggestions && (
+                                            <Box>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Suggestions:</Typography>
+                                                <Typography variant="body2" color="text.secondary">{hodRemarks.suggestions}</Typography>
+                                            </Box>
+                                        )}
+                                    </>
+                                ) : (
+                                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                            Awaiting HOD review. Remarks will appear here once the HOD completes their review.
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Paper variant="outlined" sx={{ p: 2.5, height: '100%', bgcolor: principalRemarks ? 'action.hover' : 'transparent' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: principalRemarks ? 'primary.main' : 'text.secondary' }}>
+                                    Principal's Remarks
+                                </Typography>
+                                {principalRemarks ? (
+                                    <Typography variant="body2" color="text.secondary">{principalRemarks}</Typography>
+                                ) : (
+                                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                            Awaiting Principal's remarks. Remarks will appear here once the Principal reviews your appraisal.
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Paper>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* --- HR Score Comparison (if available) --- */}
+                {hrScores && hrScores.part2 != null && (
+                    <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
+                            Score Comparison (Your Score vs HOD Score)
+                        </Typography>
+                        <Divider sx={{ mb: 3 }} />
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} sm={4}>
+                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">Part II: Teaching & Learning</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
+                                        <Chip label={`You: ${totalPart2Score.toFixed(2)}`} variant="outlined" size="small" />
+                                        <Chip label={`HOD: ${hrScores.part2?.toFixed(2) || 'N/A'}`} color="primary" size="small" />
+                                    </Box>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">Part III: R&D Contributions</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
+                                        <Chip label={`You: ${totalPart3Score.toFixed(2)}`} variant="outlined" size="small" />
+                                        <Chip label={`HOD: ${hrScores.part3?.toFixed(2) || 'N/A'}`} color="primary" size="small" />
+                                    </Box>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">Part IV: Administration</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
+                                        <Chip label={`You: ${totalPart4Score.toFixed(2)}`} variant="outlined" size="small" />
+                                        <Chip label={`HOD: ${hrScores.part4?.toFixed(2) || 'N/A'}`} color="primary" size="small" />
+                                    </Box>
+                                </Paper>
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                )}
+
+                {/* --- Read-Only Form Content (disabled overlay) --- */}
+                <Box sx={{ pointerEvents: 'none', opacity: 0.75 }}>
+                    {/* Part II Card */}
+                    <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="h6" component="h2">Part II: Teaching, Learning and Evaluation</Typography>
+                            <Chip label={`Score: ${totalPart2Score.toFixed(2)} / 350`} color="primary" />
+                        </Box>
+                        <Divider sx={{ mb: 3 }} />
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <Part2_Section7a data={part2Data.section7a} setData={() => {}} />
+                            <Part2_Section7c data={part2Data.section7c} setData={() => {}} />
+                            <Part2_Section7d data={part2Data.section7d} setData={() => {}} passPercentages={(part2Data.section7a || []).map(s => s.passPercent)} />
+                            {profile?.department?.is_basic_science ? 
+                                (<>
+                                    <Part2_BSH_Sections data={part2Data.sectionBSH} setData={() => {}} />
+                                    <Part2_Section8d data={part2Data.section8d} setData={() => {}} />
+                                </>)
+                                : (<> 
+                                    <Part2_Section8a data={part2Data.section8a} setData={() => {}} /> 
+                                    <Part2_Section8b data={part2Data.section8b} setData={() => {}} /> 
+                                    <Part2_Section8c_Regular data={part2Data.section8c_reg} setData={() => {}} />
+                                </>)
+                            }
+                            <Part2_Section9a data={part2Data.section9a} setData={() => {}} />
+                            <Part2_Section9b data={part2Data.section9b} setData={() => {}} />
+                            <Part2_Section9c data={part2Data.section9c} setData={() => {}} />
+                        </Box>
+                    </Paper>
+
+                    {/* Part III Card */}
+                    <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="h6" component="h2">Part III: R&D Contributions</Typography>
+                            <Chip label={`Score: ${totalPart3Score.toFixed(2)} / 170`} color="primary" />
+                        </Box>
+                        <Divider sx={{ mb: 3 }} />
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <Part3_Sections data={part3Data} setData={() => {}} />
+                            <Part3_Section10c data={part3Data.section10c} setData={() => {}} journalsPublished={(part3Data.journals || []).filter(j => j.name).length} />
+                        </Box>
+                    </Paper>
+
+                    {/* Part IV Card */}
+                    <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="h6" component="h2">Part IV: Administration & Contribution</Typography>
+                            <Chip label={`Score: ${totalPart4Score.toFixed(2)} / 180`} color="primary" />
+                        </Box>
+                        <Divider sx={{ mb: 3 }} />
+                        <Part4_Sections data={part4Data} setData={() => {}} />
+                    </Paper>
+                </Box>
+            </Box>
         );
     }
 

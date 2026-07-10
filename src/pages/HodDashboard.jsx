@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 // Import MUI components for the new design
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Avatar } from '@mui/material';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import PersonIcon from '@mui/icons-material/Person';
 import EditNoteIcon from '@mui/icons-material/EditNote';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Divider from '@mui/material/Divider';
 
 const HodDashboard = () => {
@@ -19,21 +20,34 @@ const HodDashboard = () => {
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [myAppraisalInfo, setMyAppraisalInfo] = useState({ status: 'Not Started', id: null });
+    // State for HOD's own appraisal details
+    const [principalRemarks, setPrincipalRemarks] = useState('');
+    const [finalApiScore, setFinalApiScore] = useState(null);
+    const [hrScores, setHrScores] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
-            // Fetch the HOD's own appraisal status
+            // Fetch the HOD's own appraisal status + remarks + scores
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const currentYear = new Date().getFullYear();
                 const { data: myAppraisal } = await supabase
                     .from('appraisals')
-                    .select('id, status')
+                    .select('id, status, principal_remarks, grand_api_score_final, part2_hr_score, part3_hr_score, part4_hr_score')
                     .eq('user_id', user.id)
                     .eq('assessment_year_start', currentYear)
                     .single();
                 if (myAppraisal) {
                     setMyAppraisalInfo({ status: myAppraisal.status, id: myAppraisal.id });
+                    setPrincipalRemarks(myAppraisal.principal_remarks || '');
+                    setFinalApiScore(myAppraisal.grand_api_score_final || null);
+                    if (myAppraisal.part2_hr_score != null) {
+                        setHrScores({
+                            part2: myAppraisal.part2_hr_score,
+                            part3: myAppraisal.part3_hr_score,
+                            part4: myAppraisal.part4_hr_score,
+                        });
+                    }
                 }
             }
 
@@ -62,6 +76,32 @@ const HodDashboard = () => {
         fetchData();
     }, []);
 
+    // Grade calculation for HOD's own appraisal
+    const myGrade = useMemo(() => {
+        if (!finalApiScore || !hrScores) return null;
+        const p2_percent = (hrScores.part2 / 350) * 100;
+        const p3_percent = (hrScores.part3 / 170) * 100;
+        const p4_percent = (hrScores.part4 / 180) * 100;
+        const grand = finalApiScore;
+
+        if (p2_percent >= 60 && p3_percent >= 60 && p4_percent >= 60 && grand >= 70) return 'A';
+        if (p2_percent >= 50 && p3_percent >= 50 && p4_percent >= 50 && grand >= 60) return 'B';
+        if (p2_percent >= 50 && p3_percent <= 50 && p4_percent >= 50 && grand >= 55) return 'C';
+        if (p2_percent >= 50 && p3_percent >= 50 && p4_percent <= 50 && grand >= 50) return 'D';
+        if (p2_percent >= 50 && p3_percent <= 50 && p4_percent <= 50 && grand >= 40) return 'E';
+        if (p2_percent < 50 && p3_percent < 50 && p4_percent < 50) return 'F';
+        return 'Not Categorized';
+    }, [finalApiScore, hrScores]);
+
+    const getGradeColor = (grade) => {
+        switch (grade) {
+            case 'A': case 'B': return 'success.main';
+            case 'C': case 'D': return 'warning.main';
+            case 'E': case 'F': return 'error.main';
+            default: return 'text.secondary';
+        }
+    };
+
     const handleOpenProfileModal = (profile) => {
         setSelectedProfile(profile);
         setIsModalOpen(true);
@@ -72,7 +112,6 @@ const HodDashboard = () => {
         setSelectedProfile(null);
     };
 
-    // --- THIS IS THE CORRECTED, FULL FUNCTION ---
     const renderStatusChip = (status) => {
         switch (status) {
             case 'submitted_by_staff':
@@ -93,6 +132,8 @@ const HodDashboard = () => {
             </Box>
         );
     }
+
+    const isMyAppraisalSubmitted = myAppraisalInfo.status === 'submitted_by_staff' || myAppraisalInfo.status === 'reviewed_by_hod';
     
     // Helper to get the status chip for the HOD's own appraisal
     const getMyAppraisalChip = () => {
@@ -108,6 +149,32 @@ const HodDashboard = () => {
         }
     };
 
+    // Action button for HOD's own appraisal
+    const getMyActionButton = () => {
+        if (isMyAppraisalSubmitted) {
+            return (
+                <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => navigate('/appraisal')}
+                >
+                    View My Appraisal
+                </Button>
+            );
+        }
+        return (
+            <Button
+                variant="contained"
+                size="large"
+                startIcon={<EditNoteIcon />}
+                onClick={() => navigate('/appraisal')}
+            >
+                {myAppraisalInfo.status === 'Not Started' ? 'Start Appraisal' : 'Continue Appraisal'}
+            </Button>
+        );
+    };
+
     return (
         <Box>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -117,8 +184,55 @@ const HodDashboard = () => {
                 Review and manage the appraisals for your department faculty.
             </Typography>
 
+            {/* --- Grade & Score Card (shown when HOD's appraisal has been reviewed) --- */}
+            {myGrade && finalApiScore != null && (
+                <Paper sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, rgba(25,118,210,0.08) 0%, rgba(156,39,176,0.08) 100%)', border: '1px solid', borderColor: 'divider' }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'center', gap: { xs: 3, sm: 6 } }}>
+                        {/* Grade Badge */}
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="overline" sx={{ letterSpacing: 2, fontWeight: 500, color: 'text.secondary' }}>My Grade</Typography>
+                            <Avatar sx={{ 
+                                bgcolor: getGradeColor(myGrade), 
+                                width: 72, height: 72, mx: 'auto', mt: 0.5,
+                                fontSize: '2rem', fontWeight: 700
+                            }}>
+                                {myGrade}
+                            </Avatar>
+                        </Box>
+                        <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
+                        <Divider sx={{ display: { xs: 'block', sm: 'none' }, width: '100%' }} />
+                        {/* Final API Score */}
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="overline" sx={{ letterSpacing: 2, fontWeight: 500, color: 'text.secondary' }}>Final API Score</Typography>
+                            <Typography variant="h3" sx={{ fontWeight: 700, color: 'primary.main', lineHeight: 1.2, mt: 0.5 }}>
+                                {finalApiScore.toFixed(2)}
+                            </Typography>
+                        </Box>
+                        <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
+                        <Divider sx={{ display: { xs: 'block', sm: 'none' }, width: '100%' }} />
+                        {/* Part-wise HR Scores */}
+                        {hrScores && (
+                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <Box sx={{ textAlign: 'center', minWidth: 80 }}>
+                                    <Typography variant="caption" color="text.secondary">Part II</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>{hrScores.part2?.toFixed(1)}<Typography component="span" variant="caption" color="text.secondary">/350</Typography></Typography>
+                                </Box>
+                                <Box sx={{ textAlign: 'center', minWidth: 80 }}>
+                                    <Typography variant="caption" color="text.secondary">Part III</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>{hrScores.part3?.toFixed(1)}<Typography component="span" variant="caption" color="text.secondary">/170</Typography></Typography>
+                                </Box>
+                                <Box sx={{ textAlign: 'center', minWidth: 80 }}>
+                                    <Typography variant="caption" color="text.secondary">Part IV</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>{hrScores.part4?.toFixed(1)}<Typography component="span" variant="caption" color="text.secondary">/180</Typography></Typography>
+                                </Box>
+                            </Box>
+                        )}
+                    </Box>
+                </Paper>
+            )}
+
             {/* --- MY APPRAISAL CARD --- */}
-            <Paper sx={{ p: 3, mb: 4 }}>
+            <Paper sx={{ p: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                     <Box>
                         <Typography variant="h6" component="h2">My Appraisal</Typography>
@@ -127,17 +241,35 @@ const HodDashboard = () => {
                             {getMyAppraisalChip()}
                         </Box>
                     </Box>
-                    <Button
-                        variant="contained"
-                        size="large"
-                        startIcon={<EditNoteIcon />}
-                        onClick={() => navigate('/appraisal')}
-                        disabled={myAppraisalInfo.status === 'submitted_by_staff' || myAppraisalInfo.status === 'reviewed_by_hod'}
-                    >
-                        {myAppraisalInfo.status === 'Not Started' ? 'Start Appraisal' : myAppraisalInfo.status === 'draft' ? 'Continue Appraisal' : 'View Appraisal'}
-                    </Button>
+                    {getMyActionButton()}
                 </Box>
             </Paper>
+
+            {/* --- Principal Remarks Card — always visible once submitted --- */}
+            {isMyAppraisalSubmitted && (
+                <Paper sx={{ p: 3, mb: 3, border: '1px solid', borderColor: principalRemarks ? 'primary.main' : 'divider', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <RateReviewIcon color={principalRemarks ? 'primary' : 'disabled'} />
+                        <Typography variant="h6" component="h2" sx={{ color: principalRemarks ? 'primary.main' : 'text.secondary' }}>
+                            Principal's Remarks
+                        </Typography>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    {principalRemarks ? (
+                        <Typography variant="body2" color="text.secondary">{principalRemarks}</Typography>
+                    ) : (
+                        <Box sx={{ textAlign: 'center', py: 3 }}>
+                            <PendingIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                            <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                Awaiting Principal's Remarks
+                            </Typography>
+                            <Typography variant="body2" color="text.disabled">
+                                Remarks will appear here once the Principal reviews your appraisal.
+                            </Typography>
+                        </Box>
+                    )}
+                </Paper>
+            )}
 
             <Divider sx={{ mb: 3 }} />
             <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Department Faculty Appraisals</Typography>
