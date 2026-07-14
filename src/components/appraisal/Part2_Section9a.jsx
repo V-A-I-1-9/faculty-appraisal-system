@@ -7,7 +7,7 @@ import { Box, Typography, Button, TextField, IconButton, Chip, Paper } from '@mu
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
-const Part2_Section9a = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section9a = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const [userId, setUserId] = useState(null);
 
     // Get the current user's ID to construct the file path

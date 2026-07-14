@@ -3,7 +3,7 @@ import { Box, Typography, TextField, Chip, Paper, Button, IconButton, Grid } fro
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
-const Part2_Section7a = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section7a = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const subjects = data || [];
     const hodSubjects = hodData || [];
 
@@ -99,6 +99,7 @@ const Part2_Section7a = ({ data, setData, isHodView = false, hodData, setHodData
                         value={hodSubjects[index]?.passPercent || ''}
                         onChange={e => handleHodSubjectChange(index, e)}
                         style={{textAlign: 'center'}}
+                        disabled={isReadOnly}
                     />
                 </div>
             ))}

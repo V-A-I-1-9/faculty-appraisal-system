@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, TextField, Chip, Paper } from '@mui/material';
 
-const Part2_Section9b = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section9b = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     
     const handleChange = (e) => {
         const stateSetter = isHodView ? setHodData : setData;
@@ -41,7 +41,7 @@ const Part2_Section9b = ({ data, setData, isHodView = false, hodData, setHodData
              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label>Rating (Max 35)</label>
                 <input type="number" value={data?.score || 0} disabled style={{width: '60px', textAlign: 'center'}} />
-                <input type="number" max="35" name="score" value={hodData?.score || ''} onChange={handleChange} style={{width: '60px'}} />
+                <input type="number" max="35" name="score" value={hodData?.score || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
             </div>
         </div>
     );

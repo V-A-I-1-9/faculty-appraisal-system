@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
@@ -17,6 +17,7 @@ const UserManagement = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [updatedRole, setUpdatedRole] = useState('');
     const [updatedDept, setUpdatedDept] = useState('');
+    const [departmentFilter, setDepartmentFilter] = useState('all');
 
     const fetchData = async () => {
         setLoading(true);
@@ -68,6 +69,11 @@ const UserManagement = () => {
         }
     };
 
+    const filteredUsers = useMemo(() => {
+        if (departmentFilter === 'all') return users;
+        return users.filter(user => user.department?.id === departmentFilter);
+    }, [users, departmentFilter]);
+
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}><CircularProgress /></Box>;
 
     return (
@@ -79,6 +85,23 @@ const UserManagement = () => {
             <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
                 Manage roles and departments for all users in the system.
             </Typography>
+
+            <Box sx={{ mb: 2 }}>
+                <FormControl size="small">
+                    <InputLabel>Filter by Department</InputLabel>
+                    <Select
+                        value={departmentFilter}
+                        label="Filter by Department"
+                        onChange={(e) => setDepartmentFilter(e.target.value)}
+                        sx={{ minWidth: 250 }}
+                    >
+                        <MenuItem value="all">All Departments</MenuItem>
+                        {departments.map(dept => (
+                            <MenuItem key={dept.id} value={dept.id}>{dept.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
 
             <TableContainer component={Paper}>
                 <Table>
@@ -92,7 +115,7 @@ const UserManagement = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {users.map((user) => (
+                        {filteredUsers.map((user) => (
                             <TableRow key={user.id} hover>
                                 <TableCell>{user.full_name}</TableCell>
                                 <TableCell>{user.email}</TableCell>

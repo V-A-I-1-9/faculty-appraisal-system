@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Chip, Paper, TextField, FormControl, InputLabel, Select, MenuItem, Divider } from '@mui/material';
 
-const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
 
     const currentData = isHodView ? hodData : data;
     const safeData = currentData || {};
@@ -116,7 +116,7 @@ const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Best Projects Awarded</Typography>
                     <FormControl size="small" sx={{ width: 250 }}>
                         <InputLabel>Place Won</InputLabel>
-                        <Select name="best_project_place" value={safeData.best_project_place || ''} label="Place Won" onChange={handleDetailChange}>
+                        <Select name="best_project_place" value={safeData.best_project_place || ''} label="Place Won" onChange={handleDetailChange} disabled={isReadOnly}>
                             <MenuItem value=""><em>None</em></MenuItem>
                             <MenuItem value="1">1st Place</MenuItem>
                             <MenuItem value="2">2nd Place</MenuItem>
@@ -128,7 +128,7 @@ const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Student Project Exhibited</Typography>
                     <FormControl size="small" sx={{ width: 250 }}>
                         <InputLabel>Status</InputLabel>
-                        <Select name="exhibited_status" value={safeData.exhibited_status || ''} label="Status" onChange={handleDetailChange}>
+                        <Select name="exhibited_status" value={safeData.exhibited_status || ''} label="Status" onChange={handleDetailChange} disabled={isReadOnly}>
                             <MenuItem value=""><em>None</em></MenuItem>
                             <MenuItem value="won">Won in Competition</MenuItem>
                             <MenuItem value="exhibited">Only Exhibited</MenuItem>
@@ -137,11 +137,11 @@ const Part2_Section8b = ({ data, setData, isHodView = false, hodData, setHodData
                 </Box>
                 <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Funded by External Agency</Typography>
-                    <TextField type="number" name="funding_amount" label="Funding Amount (INR)" value={safeData.funding_amount || ''} onChange={handleDetailChange} size="small" sx={{ width: 250 }} />
+                    <TextField type="number" name="funding_amount" label="Funding Amount (INR)" value={safeData.funding_amount || ''} onChange={handleDetailChange} size="small" sx={{ width: 250 }} disabled={isReadOnly} />
                 </Box>
                 <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Student Project Paper Publication(s)</Typography>
-                    <TextField type="number" name="publication_count" label="No. of Publications" value={safeData.publication_count || ''} onChange={handleDetailChange} size="small" sx={{ width: 250 }} />
+                    <TextField type="number" name="publication_count" label="No. of Publications" value={safeData.publication_count || ''} onChange={handleDetailChange} size="small" sx={{ width: 250 }} disabled={isReadOnly} />
                 </Box>
             </Box>
         </Paper>

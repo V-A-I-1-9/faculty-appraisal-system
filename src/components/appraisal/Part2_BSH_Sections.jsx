@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, Select, MenuItem, InputLabel, FormControl, TextField, Grid } from '@mui/material';
 
 
-const Part2_BSH_Sections = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_BSH_Sections = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -97,7 +97,7 @@ const Part2_BSH_Sections = ({ data, setData, isHodView = false, hodData, setHodD
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label><strong>8.a.</strong> No. of Toppers</label>
                 <input value={data?.topper_rank ? `${data.topper_rank}` : 'N/A'} disabled style={{width: '100px', textAlign: 'center'}} />
-                <select name="topper_rank" value={hodData?.topper_rank || ''} onChange={handleChange} style={{ marginLeft: '10px', width: '100px' }}>
+                <select name="topper_rank" value={hodData?.topper_rank || ''} onChange={handleChange} style={{ marginLeft: '10px', width: '100px' }} disabled={isReadOnly}>
                     <option value="">Select</option><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option>
                 </select>
             </div>
@@ -105,13 +105,13 @@ const Part2_BSH_Sections = ({ data, setData, isHodView = false, hodData, setHodD
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label><strong>8.b.</strong> % Vertical Progression</label>
                 <input type="number" value={data?.vertical_progression_percent || 0} disabled style={{width: '60px', textAlign: 'center'}} />
-                <input type="number" name="vertical_progression_percent" value={hodData?.vertical_progression_percent || ''} onChange={handleChange} style={{width: '60px'}} />
+                <input type="number" name="vertical_progression_percent" value={hodData?.vertical_progression_percent || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label><strong>8.c.</strong> % FCD</label>
                 <input type="number" value={data?.fcd_percent || 0} disabled style={{width: '60px', textAlign: 'center'}} />
-                <input type="number" name="fcd_percent" value={hodData?.fcd_percent || ''} onChange={handleChange} style={{width: '60px'}} />
+                <input type="number" name="fcd_percent" value={hodData?.fcd_percent || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, TextField, Chip, Paper } from '@mui/material';
 
-const Part2_Section8c_Regular = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section8c_Regular = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const apiScore = useMemo(() => {
         const percent = parseInt(data?.graduated_percent || 0, 10);
         if (percent >= 90) return 30;
@@ -47,7 +47,7 @@ const Part2_Section8c_Regular = ({ data, setData, isHodView = false, hodData, se
              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label>% of students graduated</label>
                 <input type="number" value={data?.graduated_percent || 0} disabled style={{width: '60px', textAlign: 'center'}} />
-                <input type="number" name="graduated_percent" value={hodData?.graduated_percent || ''} onChange={handleChange} style={{width: '60px'}} />
+                <input type="number" name="graduated_percent" value={hodData?.graduated_percent || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
             </div>
         </div>
     );

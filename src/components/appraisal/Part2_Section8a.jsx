@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, TextField, Chip, Paper } from '@mui/material';
 
-const Part2_Section8a = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section8a = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const apiScore = useMemo(() => {
         const num = parseInt(data?.count || 0, 10);
         return num >= 1 ? 40 : 0;
@@ -45,7 +45,7 @@ const Part2_Section8a = ({ data, setData, isHodView = false, hodData, setHodData
              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label>Number of Projects</label>
                 <input type="number" value={data?.count || 0} disabled style={{width: '60px', textAlign: 'center'}} />
-                <input type="number" name="count" value={hodData?.count || ''} onChange={handleChange} style={{width: '60px'}} />
+                <input type="number" name="count" value={hodData?.count || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
             </div>
         </div>
     );

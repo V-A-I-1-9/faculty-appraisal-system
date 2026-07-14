@@ -4,11 +4,12 @@ import { supabase } from '../supabaseClient';
 import * as XLSX from 'xlsx';
 
 // Import MUI components for the new design
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, FormControl, InputLabel, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, FormControl, InputLabel, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, InputAdornment } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DownloadIcon from '@mui/icons-material/Download';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
+import SearchIcon from '@mui/icons-material/Search';
 
 const PrincipalDashboard = () => {
     const navigate = useNavigate();
@@ -20,6 +21,7 @@ const PrincipalDashboard = () => {
     const [departments, setDepartments] = useState([]);
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const adjudicateBestFaculty = useCallback((appraisalList) => {
         const departments = {};
@@ -95,6 +97,14 @@ const PrincipalDashboard = () => {
         if (departmentFilter !== 'all') {
             sortableItems = sortableItems.filter(app => app.profile.department.id === departmentFilter);
         }
+        if (searchQuery.trim()) {
+            const query = searchQuery.trim().toLowerCase();
+            sortableItems = sortableItems.filter(app => {
+                const fullName = (app.profile.full_name || '').toLowerCase();
+                const staffId = (app.profile.staff_id || '').toLowerCase();
+                return fullName.includes(query) || staffId.includes(query);
+            });
+        }
         sortableItems.sort((a, b) => {
             const valA = a.grand_api_score_final || 0;
             const valB = b.grand_api_score_final || 0;
@@ -103,7 +113,7 @@ const PrincipalDashboard = () => {
             return 0;
         });
         return sortableItems;
-    }, [processedAppraisals, sortConfig, departmentFilter]);
+    }, [processedAppraisals, sortConfig, departmentFilter, searchQuery]);
     
     const handleSortRequest = (key) => {
         let direction = 'ascending';
@@ -169,7 +179,21 @@ const PrincipalDashboard = () => {
             </Typography>
 
             <Paper>
-                <Box sx={{ p: 2 }}>
+                <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <TextField
+                        size="small"
+                        placeholder="Search by name or staff ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        sx={{ minWidth: 280 }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                     <FormControl size="small">
                         <InputLabel>Department</InputLabel>
                         <Select

@@ -7,7 +7,7 @@ import { Box, Typography, Button, TextField, IconButton, Divider, Grid, Select, 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
-const Part3_Sections = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part3_Sections = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const [userId, setUserId] = useState(null);
 
     useEffect(() => {
@@ -123,7 +123,7 @@ const Part3_Sections = ({ data, setData, isHodView = false, hodData, setHodData 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginBottom: '1rem' }}>
             <label><strong>{label}</strong></label>
             <input value={data?.[name] || 'N/A'} disabled style={{ width: '100px', textAlign: 'center', textTransform: 'capitalize' }} />
-            <select name={name} value={hodData?.[name] || ''} onChange={handleChange} style={{ width: '100px' }}>
+            <select name={name} value={hodData?.[name] || ''} onChange={handleChange} style={{ width: '100px' }} disabled={isReadOnly}>
                 {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
         </div>
@@ -132,7 +132,7 @@ const Part3_Sections = ({ data, setData, isHodView = false, hodData, setHodData 
          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginBottom: '1rem' }}>
             <label><strong>{label}</strong></label>
             <input type="number" value={data?.[name] || 0} disabled style={{ width: '60px', textAlign: 'center' }} />
-            <input type="number" name={name} value={hodData?.[name] || ''} onChange={handleChange} style={{ width: '60px' }}/>
+            <input type="number" name={name} value={hodData?.[name] || ''} onChange={handleChange} style={{ width: '60px' }} disabled={isReadOnly}/>
         </div>
     );
     return (

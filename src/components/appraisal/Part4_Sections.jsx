@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, TextField, Chip, Paper, Grid, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 // This version contains the complete code for BOTH the Staff's view and the HOD's review view.
-const Part4_Sections = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part4_Sections = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -85,7 +85,7 @@ const Part4_Sections = ({ data, setData, isHodView = false, hodData, setHodData 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center' }}>
             <label><strong>{label}</strong> (Max {max})</label>
             <input type="number" max={max} name={name} value={data?.[name] || ''} disabled style={{width: '60px', textAlign: 'center'}} />
-            <input type="number" max={max} name={name} value={hodData?.[name] || ''} onChange={handleChange} style={{width: '60px'}} />
+            <input type="number" max={max} name={name} value={hodData?.[name] || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
         </div>
     );
 
@@ -93,7 +93,7 @@ const Part4_Sections = ({ data, setData, isHodView = false, hodData, setHodData 
          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center' }}>
             <label><strong>{label}</strong></label>
             <input value={data?.[name] || ''} disabled style={{width: '100px', textAlign: 'center', textTransform: 'capitalize'}} />
-            <select name={name} value={hodData?.[name] || ''} onChange={handleSelectChange}>
+            <select name={name} value={hodData?.[name] || ''} onChange={handleSelectChange} disabled={isReadOnly}>
                 {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
         </div>

@@ -6,7 +6,7 @@ import { Box, Typography, Button, TextField, IconButton, Select, MenuItem, FormC
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 
-const Part3_Section10c = ({ data, setData, isHodView = false, hodData, setHodData, journalsPublished }) => {
+const Part3_Section10c = ({ data, setData, isHodView = false, hodData, setHodData, journalsPublished, isReadOnly = false }) => {
     const [userId, setUserId] = useState(null);
 
     useEffect(() => {
@@ -169,23 +169,23 @@ const Part3_Section10c = ({ data, setData, isHodView = false, hodData, setHodDat
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Papers indexed in Scopus/WoS/UGC</Typography>
                     {safePapers.map((paper, index) => (
                         <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                            <TextField name="name" label={`Indexed Paper ${index + 1}`} value={paper.name || ''} onChange={(e) => handleDetailChange(e, index)} size="small" sx={{ flexGrow: 1 }} />
-                            <IconButton onClick={() => removePaper(index)} color="secondary" disabled={safePapers.length < 2}><RemoveCircleOutlineIcon /></IconButton>
+                            <TextField name="name" label={`Indexed Paper ${index + 1}`} value={paper.name || ''} onChange={(e) => handleDetailChange(e, index)} size="small" sx={{ flexGrow: 1 }} disabled={isReadOnly} />
+                            {!isReadOnly && <IconButton onClick={() => removePaper(index)} color="secondary" disabled={safePapers.length < 2}><RemoveCircleOutlineIcon /></IconButton>}
                         </Box>
                     ))}
-                    <Button startIcon={<AddCircleOutlineIcon />} onClick={addPaper} size="small" variant="outlined">Add Indexed Paper</Button>
+                    {!isReadOnly && <Button startIcon={<AddCircleOutlineIcon />} onClick={addPaper} size="small" variant="outlined">Add Indexed Paper</Button>}
                 </Box>
 
                 <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Book Chapters Authored</Typography>
-                    <TextField type="number" name="chapters_count" label="No. of Book Chapters" value={safeData.chapters_count || ''} onChange={handleDetailChange} size="small" sx={{ width: 200 }} />
+                    <TextField type="number" name="chapters_count" label="No. of Book Chapters" value={safeData.chapters_count || ''} onChange={handleDetailChange} size="small" sx={{ width: 200 }} disabled={isReadOnly} />
                 </Box>
 
                 <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Books Authored</Typography>
                     <FormControl size="small" sx={{ width: 300 }}>
                         <InputLabel>Status</InputLabel>
-                        <Select name="prescribed_status" value={safeData.prescribed_status || ''} label="Status" onChange={handleDetailChange}>
+                        <Select name="prescribed_status" value={safeData.prescribed_status || ''} label="Status" onChange={handleDetailChange} disabled={isReadOnly}>
                             <MenuItem value=""><em>None</em></MenuItem>
                             <MenuItem value="two_plus">Prescribed by 2+ Universities</MenuItem>
                             <MenuItem value="one">Prescribed by 1 University</MenuItem>

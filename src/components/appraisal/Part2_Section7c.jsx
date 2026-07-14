@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, TextField, Chip, Paper, Divider } from '@mui/material';
 
-const Part2_Section7c = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section7c = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const apiScore = useMemo(() => {
         const score = parseFloat(data?.score || 0);
         return !isNaN(score) && score <= 40 ? score : 0;
@@ -46,7 +46,7 @@ const Part2_Section7c = ({ data, setData, isHodView = false, hodData, setHodData
              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label>Student Feedback Average (Max 40)</label>
                 <input type="number" value={data?.score || 0} disabled style={{width: '60px', textAlign: 'center'}} />
-                <input type="number" max="40" name="score" value={hodData?.score || ''} onChange={handleChange} style={{width: '60px'}} />
+                <input type="number" max="40" name="score" value={hodData?.score || ''} onChange={handleChange} style={{width: '60px'}} disabled={isReadOnly} />
             </div>
         </div>
     );

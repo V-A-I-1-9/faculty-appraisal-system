@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, TextField, Chip, Paper, Grid } from '@mui/material';
 
-const Part2_Section7d = ({ data, setData, isHodView = false, hodData, setHodData, passPercentages, hodPassPercentages }) => {
+const Part2_Section7d = ({ data, setData, isHodView = false, hodData, setHodData, passPercentages, hodPassPercentages, isReadOnly = false }) => {
     
     const handleHodSubjectChange = (index, event) => {
         const values = [...(hodData || [])];
@@ -79,6 +79,7 @@ const Part2_Section7d = ({ data, setData, isHodView = false, hodData, setHodData
                         value={(hodData || [])[index]?.high_scorers_percent || ''}
                         onChange={e => handleHodSubjectChange(index, e)}
                         style={{textAlign: 'center'}}
+                        disabled={isReadOnly}
                     />
                 </div>
             ))}

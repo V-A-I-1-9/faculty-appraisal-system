@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Chip, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
-const Part2_Section8d = ({ data, setData, isHodView = false, hodData, setHodData }) => {
+const Part2_Section8d = ({ data, setData, isHodView = false, hodData, setHodData, isReadOnly = false }) => {
     const apiScore = useMemo(() => {
         return data?.is_completed === 'yes' ? 10 : 0;
     }, [data]);
@@ -41,7 +41,7 @@ const Part2_Section8d = ({ data, setData, isHodView = false, hodData, setHodData
              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center', marginTop: '0.5rem' }}>
                 <label>Is project completed?</label>
                 <input value={data?.is_completed || 'N/A'} disabled style={{width: '100px', textAlign: 'center'}} />
-                <select name="is_completed" value={hodData?.is_completed || ''} onChange={handleChange} style={{width: '100px'}}>
+                <select name="is_completed" value={hodData?.is_completed || ''} onChange={handleChange} style={{width: '100px'}} disabled={isReadOnly}>
                     <option value="">Select Status</option>
                     <option value="yes">Yes, Completed</option>
                     <option value="no">No</option>
