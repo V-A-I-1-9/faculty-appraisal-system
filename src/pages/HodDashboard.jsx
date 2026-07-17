@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 // Import MUI components for the new design
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Avatar } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Avatar } from '@mui/material';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
@@ -11,6 +11,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import PersonIcon from '@mui/icons-material/Person';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import Divider from '@mui/material/Divider';
 
 const HodDashboard = () => {
@@ -270,6 +271,52 @@ const HodDashboard = () => {
                     )}
                 </Paper>
             )}
+
+            {/* --- Review Progress Card --- */}
+            {(() => {
+                const total = facultyList.length;
+                const reviewed = facultyList.filter(f => f.appraisal_status === 'reviewed_by_hod').length;
+                const pending = total - reviewed;
+                const percentage = total > 0 ? Math.round((reviewed / total) * 100) : 0;
+                const isComplete = percentage === 100;
+
+                if (total === 0) return null;
+
+                return (
+                    <Paper sx={{ p: 3, mb: 3, border: '1px solid', borderColor: isComplete ? 'success.light' : 'divider', borderRadius: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                            <AssignmentTurnedInIcon color={isComplete ? 'success' : 'primary'} />
+                            <Typography variant="h6" component="h2">
+                                Review Progress
+                            </Typography>
+                            <Chip 
+                                label={`${percentage}%`} 
+                                size="small" 
+                                color={isComplete ? 'success' : 'primary'} 
+                                sx={{ ml: 'auto', fontWeight: 700, fontSize: '0.85rem' }} 
+                            />
+                        </Box>
+                        <LinearProgress 
+                            variant="determinate" 
+                            value={percentage} 
+                            color={isComplete ? 'success' : 'primary'}
+                            sx={{ height: 10, borderRadius: 5, mb: 2, bgcolor: isComplete ? 'success.50' : 'grey.200' }} 
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                You have completed <strong style={{ color: isComplete ? '#2e7d32' : '#1976d2' }}>{reviewed} out of {total}</strong> reviews
+                            </Typography>
+                            {isComplete ? (
+                                <Chip icon={<CheckCircleIcon />} label="All reviews complete!" color="success" size="small" variant="outlined" />
+                            ) : (
+                                <Typography variant="body2" sx={{ color: 'warning.main', fontWeight: 600 }}>
+                                    {pending} review{pending !== 1 ? 's' : ''} remaining
+                                </Typography>
+                            )}
+                        </Box>
+                    </Paper>
+                );
+            })()}
 
             <Divider sx={{ mb: 3 }} />
             <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Department Faculty Appraisals</Typography>

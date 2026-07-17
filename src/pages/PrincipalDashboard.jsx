@@ -4,12 +4,14 @@ import { supabase } from '../supabaseClient';
 import * as XLSX from 'xlsx';
 
 // Import MUI components for the new design
-import { Box, Typography, Paper, Button, Chip, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, FormControl, InputLabel, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, InputAdornment } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, FormControl, InputLabel, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, InputAdornment } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DownloadIcon from '@mui/icons-material/Download';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const PrincipalDashboard = () => {
     const navigate = useNavigate();
@@ -22,6 +24,9 @@ const PrincipalDashboard = () => {
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+    const [allStaffProfiles, setAllStaffProfiles] = useState([]);
+    const [allHods, setAllHods] = useState([]);
 
     const adjudicateBestFaculty = useCallback((appraisalList) => {
         const departments = {};
@@ -91,6 +96,62 @@ const PrincipalDashboard = () => {
         };
         fetchReviewedAppraisals();
     }, [adjudicateBestFaculty]);
+
+    // Fetch data for progress tracking (all staff + all HODs)
+    useEffect(() => {
+        const fetchProgressData = async () => {
+            const currentYear = new Date().getFullYear();
+            // Fetch all staff with their appraisal status
+            const { data: staffData } = await supabase
+                .from('profiles')
+                .select(`id, full_name, department_id, department:departments(id, name), appraisals(id, status, assessment_year_start)`)
+                .eq('role', 'staff');
+            if (staffData) setAllStaffProfiles(staffData);
+
+            // Fetch all HODs
+            const { data: hodData } = await supabase
+                .from('profiles')
+                .select(`id, full_name, department_id, department:departments(id, name)`)
+                .eq('role', 'hod');
+            if (hodData) setAllHods(hodData);
+        };
+        fetchProgressData();
+    }, []);
+
+    // Compute per-department progress
+    const departmentProgress = useMemo(() => {
+        if (allStaffProfiles.length === 0) return [];
+        const currentYear = new Date().getFullYear();
+        const deptMap = {};
+
+        allStaffProfiles.forEach(staff => {
+            const deptId = staff.department?.id;
+            const deptName = staff.department?.name;
+            if (!deptId || !deptName) return;
+
+            if (!deptMap[deptId]) {
+                deptMap[deptId] = { deptId, deptName, total: 0, reviewed: 0, hodName: null };
+            }
+            deptMap[deptId].total++;
+
+            const currentAppraisal = (staff.appraisals || []).find(a => a.assessment_year_start === currentYear);
+            if (currentAppraisal && currentAppraisal.status === 'reviewed_by_hod') {
+                deptMap[deptId].reviewed++;
+            }
+        });
+
+        // Attach HOD names
+        allHods.forEach(hod => {
+            const deptId = hod.department?.id;
+            if (deptId && deptMap[deptId]) {
+                deptMap[deptId].hodName = hod.full_name;
+            }
+        });
+
+        return Object.values(deptMap)
+            .map(d => ({ ...d, pending: d.total - d.reviewed, percentage: d.total > 0 ? Math.round((d.reviewed / d.total) * 100) : 0 }))
+            .sort((a, b) => a.deptName.localeCompare(b.deptName));
+    }, [allStaffProfiles, allHods]);
 
     const sortedAndFilteredAppraisals = useMemo(() => {
         let sortableItems = [...processedAppraisals];
@@ -168,6 +229,9 @@ const PrincipalDashboard = () => {
                 <Box>
                     <Button component={Link} to="/principal/user-management" variant="contained" sx={{ mr: 2 }}>
                          Manage Users
+                    </Button>
+                    <Button variant="outlined" startIcon={<AssessmentIcon />} onClick={() => setProgressDialogOpen(true)} sx={{ mr: 2 }}>
+                        Review Progress
                     </Button>
                     <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExport}>
                         Export to Excel
@@ -283,6 +347,70 @@ const PrincipalDashboard = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseProfileModal}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Review Progress Dialog */}
+            <Dialog open={progressDialogOpen} onClose={() => setProgressDialogOpen(false)} fullWidth maxWidth="sm">
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <AssessmentIcon color="primary" />
+                    Department Review Progress
+                </DialogTitle>
+                <DialogContent dividers>
+                    {departmentProgress.length === 0 ? (
+                        <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>No data available.</Typography>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                            {departmentProgress.map((dept) => {
+                                const isComplete = dept.percentage === 100;
+                                const needsAttention = dept.percentage < 50;
+                                const progressColor = isComplete ? 'success' : needsAttention ? 'warning' : 'primary';
+                                const borderColor = isComplete ? 'success.light' : needsAttention ? 'warning.light' : 'divider';
+
+                                return (
+                                    <Paper key={dept.deptId} variant="outlined" sx={{ p: 2.5, borderColor, borderRadius: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                            <Box>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                                                    {dept.deptName}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    HOD: {dept.hodName || 'Not assigned'}
+                                                </Typography>
+                                            </Box>
+                                            <Chip 
+                                                label={`${dept.percentage}%`} 
+                                                size="small" 
+                                                color={progressColor}
+                                                sx={{ fontWeight: 700, fontSize: '0.8rem', minWidth: 50 }} 
+                                            />
+                                        </Box>
+                                        <LinearProgress 
+                                            variant="determinate" 
+                                            value={dept.percentage} 
+                                            color={progressColor}
+                                            sx={{ height: 8, borderRadius: 4, mb: 1.5, bgcolor: 'grey.100' }} 
+                                        />
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                <strong>{dept.reviewed}</strong> of <strong>{dept.total}</strong> reviewed
+                                            </Typography>
+                                            {isComplete ? (
+                                                <Chip icon={<CheckCircleIcon />} label="Complete" color="success" size="small" variant="outlined" sx={{ height: 24 }} />
+                                            ) : (
+                                                <Typography variant="body2" sx={{ color: needsAttention ? 'warning.main' : 'text.secondary', fontWeight: 500 }}>
+                                                    {dept.pending} remaining
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </Paper>
+                                );
+                            })}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setProgressDialogOpen(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
         </Box>
