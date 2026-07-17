@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 import * as XLSX from 'xlsx';
 
 // Import MUI components for the new design
-import { Box, Typography, Paper, Button, Chip, CircularProgress, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, FormControl, InputLabel, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, InputAdornment } from '@mui/material';
+import { Box, Typography, Paper, Button, Chip, CircularProgress, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, FormControl, InputLabel, Select, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, InputAdornment, Fab, Zoom } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DownloadIcon from '@mui/icons-material/Download';
 import StarIcon from '@mui/icons-material/Star';
@@ -12,6 +12,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 const PrincipalDashboard = () => {
     const navigate = useNavigate();
@@ -27,6 +28,23 @@ const PrincipalDashboard = () => {
     const [progressDialogOpen, setProgressDialogOpen] = useState(false);
     const [allStaffProfiles, setAllStaffProfiles] = useState([]);
     const [allHods, setAllHods] = useState([]);
+    const [showScroll, setShowScroll] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 300) {
+                setShowScroll(true);
+            } else {
+                setShowScroll(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     const adjudicateBestFaculty = useCallback((appraisalList) => {
         const departments = {};
@@ -82,7 +100,7 @@ const PrincipalDashboard = () => {
         const fetchReviewedAppraisals = async () => {
             const { data, error } = await supabase
                 .from('appraisals')
-                .select(`*, profile:profiles ( *, department:departments ( id, name ) )`)
+                .select(`*, profile:profiles ( *, department:departments ( id, name, is_basic_science ) )`)
                 .eq('status', 'reviewed_by_hod');
             if (error) {
                 console.error("Error fetching appraisals:", error);
@@ -185,13 +203,112 @@ const PrincipalDashboard = () => {
     };
 
     const handleExport = () => {
-        const formattedData = sortedAndFilteredAppraisals.map(app => ({
-            "Staff Name": app.profile.full_name,
-            "Staff ID": app.profile.staff_id,
-            "Department": app.profile.department.name,
-            "Final Score (HR)": app.grand_api_score_final?.toFixed(2),
-            "Category": app.category,
-        }));
+        const formattedData = sortedAndFilteredAppraisals.map(app => {
+            const p2 = app.part2_data || {};
+            const p2hr = app.part2_hr_data || {};
+            const p3 = app.part3_data || {};
+            const p3hr = app.part3_hr_data || {};
+            const p4 = app.part4_data || {};
+            const p4hr = app.part4_hr_data || {};
+            const isBSH = app.profile.department?.is_basic_science;
+
+            return {
+                "Staff Name": app.profile.full_name,
+                "Staff ID": app.profile.staff_id,
+                "Department": app.profile.department?.name || 'N/A',
+                "Designation": app.profile.present_designation || 'N/A',
+
+                // Teaching (Part 2) - Common
+                "TLE 7a Pass % (SR)": (p2.section7a || []).map(s => s.passPercent).join(', '),
+                "TLE 7a Pass % (HR)": (p2hr.section7a || []).map(s => s.passPercent).join(', '),
+                "TLE 7c Feedback Score (SR)": p2.section7c?.score || '',
+                "TLE 7c Feedback Score (HR)": p2hr.section7c?.score || '',
+
+                // Non-BSH Specific
+                "TLE 7d High Scorers % (SR)": isBSH ? '' : (p2.section7d || []).map(s => s.high_scorers_percent).join(', '),
+                "TLE 7d High Scorers % (HR)": isBSH ? '' : (p2hr.section7d || []).map(s => s.high_scorers_percent).join(', '),
+                "TLE 8a Projects Count (SR)": isBSH ? '' : (p2.section8a?.count || ''),
+                "TLE 8a Projects Count (HR)": isBSH ? '' : (p2hr.section8a?.count || ''),
+                "TLE 8b Best Project Place (SR)": isBSH ? '' : (p2.section8b?.best_project_place || ''),
+                "TLE 8b Best Project Place (HR)": isBSH ? '' : (p2hr.section8b?.best_project_place || ''),
+                "TLE 8b Exhibited (SR)": isBSH ? '' : (p2.section8b?.exhibited_status || ''),
+                "TLE 8b Exhibited (HR)": isBSH ? '' : (p2hr.section8b?.exhibited_status || ''),
+                "TLE 8b Funding (SR)": isBSH ? '' : (p2.section8b?.funding_amount || ''),
+                "TLE 8b Funding (HR)": isBSH ? '' : (p2hr.section8b?.funding_amount || ''),
+                "TLE 8b Publications (SR)": isBSH ? '' : (p2.section8b?.publication_count || ''),
+                "TLE 8b Publications (HR)": isBSH ? '' : (p2hr.section8b?.publication_count || ''),
+                "TLE 8c Graduated % (SR)": isBSH ? '' : (p2.section8c_reg?.graduated_percent || ''),
+                "TLE 8c Graduated % (HR)": isBSH ? '' : (p2hr.section8c_reg?.graduated_percent || ''),
+
+                // BSH Specific
+                "BSH 8a Toppers (SR)": isBSH ? (p2.sectionBSH?.topper_rank || '') : '',
+                "BSH 8a Toppers (HR)": isBSH ? (p2hr.sectionBSH?.topper_rank || '') : '',
+                "BSH 8b Vertical Prog % (SR)": isBSH ? (p2.sectionBSH?.vertical_progression_percent || '') : '',
+                "BSH 8b Vertical Prog % (HR)": isBSH ? (p2hr.sectionBSH?.vertical_progression_percent || '') : '',
+                "BSH 8c FCD (SR)": isBSH ? (p2.sectionBSH?.total_mentees ? `${p2.sectionBSH.fcd_count || 0}/${p2.sectionBSH.total_mentees}` : '') : '',
+                "BSH 8c FCD % (HR)": isBSH ? (p2hr.sectionBSH?.fcd_percent || '') : '',
+                "BSH 8d Project Completed (SR)": isBSH ? (p2.section8d?.is_completed || '') : '',
+                "BSH 8d Project Completed (HR)": isBSH ? (p2hr.section8d?.is_completed || '') : '',
+                
+                "TLE 9b Rating (SR)": p2.section9b?.score || '',
+                "TLE 9b Rating (HR)": p2hr.section9b?.score || '',
+
+                // R&D (Part 3)
+                "RnD 10a Journals Count (SR)": (p3.journals || []).filter(j => j.name).length || '',
+                "RnD 10a Journals Count (HR)": (p3hr.journals || []).filter(j => j.name).length || '',
+                "RnD 10b Conferences (SR)": p3.conferences_presented || '',
+                "RnD 10b Conferences (HR)": p3hr.conferences_presented || '',
+                "RnD 10c Scopus/Indexed (SR)": (p3.section10c?.papers || []).filter(p=>p.name).length || '',
+                "RnD 10c Scopus/Indexed (HR)": (p3hr.section10c?.papers || []).filter(p=>p.name).length || '',
+                "RnD 10c Chapters (SR)": p3.section10c?.chapters_count || '',
+                "RnD 10c Chapters (HR)": p3hr.section10c?.chapters_count || '',
+                "RnD 10c Books (SR)": p3.section10c?.prescribed_status || '',
+                "RnD 10c Books (HR)": p3hr.section10c?.prescribed_status || '',
+                "RnD 11a Proposals (SR)": p3.proposal_status || '',
+                "RnD 11a Proposals (HR)": p3hr.proposal_status || '',
+                "RnD 11b Projects Received (SR)": p3.project_amount || '',
+                "RnD 11b Projects Received (HR)": p3hr.project_amount || '',
+                "RnD 12a Consultancy (SR)": p3.consultancy_amount || '',
+                "RnD 12a Consultancy (HR)": p3hr.consultancy_amount || '',
+                "RnD 12b Patents (SR)": p3.patent_status || '',
+                "RnD 12b Patents (HR)": p3hr.patent_status || '',
+
+                // Admin (Part 4)
+                "Admin 13a Punctuality (SR)": p4.punctuality_13a || '',
+                "Admin 13a Punctuality (HR)": p4hr.punctuality_13a || '',
+                "Admin 13b Behavior (SR)": p4.behavior_13b || '',
+                "Admin 13b Behavior (HR)": p4hr.behavior_13b || '',
+                "Admin 13c Performance (SR)": p4.performance_13c || '',
+                "Admin 13c Performance (HR)": p4hr.performance_13c || '',
+                "Admin 13d Culture (SR)": p4.culture_13d || '',
+                "Admin 13d Culture (HR)": p4hr.culture_13d || '',
+                "Admin 13e Mentoring (SR)": p4.mentoring_13e || '',
+                "Admin 13e Mentoring (HR)": p4hr.mentoring_13e || '',
+                "Admin 13f Teamwork (SR)": p4.teamwork_13f || '',
+                "Admin 13f Teamwork (HR)": p4hr.teamwork_13f || '',
+                "Admin 14a Preparedness (SR)": p4.preparedness_14a || '',
+                "Admin 14a Preparedness (HR)": p4hr.preparedness_14a || '',
+                "Admin 14b Assessment (SR)": p4.assessment_14b || '',
+                "Admin 14b Assessment (HR)": p4hr.assessment_14b || '',
+                "Admin 14c Activities (SR)": p4.activities_14c || '',
+                "Admin 14c Activities (HR)": p4hr.activities_14c || '',
+                "Admin 15a Responsibilities (SR)": p4.responsibilities_15a || '',
+                "Admin 15a Responsibilities (HR)": p4hr.responsibilities_15a || '',
+
+                // Final aggregates
+                "Final Part 2 Score (HR)": app.part2_hr_score?.toFixed(2) || '0',
+                "Final Part 3 Score (HR)": app.part3_hr_score?.toFixed(2) || '0',
+                "Final Part 4 Score (HR)": app.part4_hr_score?.toFixed(2) || '0',
+                "Grand API Score": app.grand_api_score_final?.toFixed(2) || '0',
+                "Category": app.category || 'N/A',
+                
+                // Remarks
+                "HOD Remarks (Strengths)": app.hod_remarks?.strengths || '',
+                "HOD Remarks (Concerns)": app.hod_remarks?.concerns || '',
+                "HOD Remarks (Suggestions)": app.hod_remarks?.suggestions || '',
+                "Principal Remarks": app.principal_remarks || ''
+            };
+        });
         const worksheet = XLSX.utils.json_to_sheet(formattedData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Faculty Appraisals");
@@ -413,6 +530,18 @@ const PrincipalDashboard = () => {
                     <Button onClick={() => setProgressDialogOpen(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Scroll to Top Button */}
+            <Zoom in={showScroll}>
+                <Fab 
+                    color="primary" 
+                    size="small" 
+                    onClick={scrollToTop} 
+                    sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}
+                >
+                    <KeyboardArrowUpIcon />
+                </Fab>
+            </Zoom>
         </Box>
     );
 };

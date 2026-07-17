@@ -4,8 +4,9 @@ import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
 
 // Import MUI Components
-import { Box, Typography, Paper, Button, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Typography, Paper, Button, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem, Fab, Zoom } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -18,6 +19,23 @@ const UserManagement = () => {
     const [updatedRole, setUpdatedRole] = useState('');
     const [updatedDept, setUpdatedDept] = useState('');
     const [departmentFilter, setDepartmentFilter] = useState('all');
+    const [showScroll, setShowScroll] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 300) {
+                setShowScroll(true);
+            } else {
+                setShowScroll(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -168,6 +186,18 @@ const UserManagement = () => {
                     <Button onClick={handleUpdateUser} variant="contained">Save Changes</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Scroll to Top Button */}
+            <Zoom in={showScroll}>
+                <Fab 
+                    color="primary" 
+                    size="small" 
+                    onClick={scrollToTop} 
+                    sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}
+                >
+                    <KeyboardArrowUpIcon />
+                </Fab>
+            </Zoom>
         </Box>
     );
 };
