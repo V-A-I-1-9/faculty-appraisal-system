@@ -318,12 +318,6 @@ const Appraisal = () => {
                                 <Typography variant="h4" color="primary" sx={{ fontWeight: 700, lineHeight: 1 }}>{grandApiScore.toFixed(2)}</Typography>
                                 <Typography variant="caption" sx={{ letterSpacing: 1, fontWeight: 500 }}>YOUR SCORE</Typography>
                             </Box>
-                            {finalApiScore != null && (
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography variant="h4" color="secondary" sx={{ fontWeight: 700, lineHeight: 1 }}>{finalApiScore.toFixed(2)}</Typography>
-                                    <Typography variant="caption" sx={{ letterSpacing: 1, fontWeight: 500 }}>HOD SCORE</Typography>
-                                </Box>
-                            )}
                             <Box sx={{ display: 'flex', gap: 1 }}>
                                 <Button onClick={handleSaveAsPDF} startIcon={<PictureAsPdfIcon />} color="error" variant="outlined" size="small">PDF</Button>
                             </Box>
@@ -331,7 +325,7 @@ const Appraisal = () => {
                     </Box>
                 </Paper>
 
-                {/* --- HOD & Principal Remarks Section — always visible --- */}
+                {/* --- HOD & Principal Remarks Section --- */}
                 <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, border: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
                         Review Remarks
@@ -392,44 +386,7 @@ const Appraisal = () => {
                     </Grid>
                 </Paper>
 
-                {/* --- HR Score Comparison (if available) --- */}
-                {hrScores && hrScores.part2 != null && (
-                    <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, border: '1px solid', borderColor: 'divider' }}>
-                        <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
-                            Score Comparison (Your Score vs HOD Score)
-                        </Typography>
-                        <Divider sx={{ mb: 3 }} />
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={4}>
-                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                                    <Typography variant="body2" color="text.secondary">Part II: Teaching & Learning</Typography>
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
-                                        <Chip label={`You: ${totalPart2Score.toFixed(2)}`} variant="outlined" size="small" />
-                                        <Chip label={`HOD: ${hrScores.part2?.toFixed(2) || 'N/A'}`} color="primary" size="small" />
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                                    <Typography variant="body2" color="text.secondary">Part III: R&D Contributions</Typography>
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
-                                        <Chip label={`You: ${totalPart3Score.toFixed(2)}`} variant="outlined" size="small" />
-                                        <Chip label={`HOD: ${hrScores.part3?.toFixed(2) || 'N/A'}`} color="primary" size="small" />
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                                <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                                    <Typography variant="body2" color="text.secondary">Part IV: Administration</Typography>
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
-                                        <Chip label={`You: ${totalPart4Score.toFixed(2)}`} variant="outlined" size="small" />
-                                        <Chip label={`HOD: ${hrScores.part4?.toFixed(2) || 'N/A'}`} color="primary" size="small" />
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                        </Grid>
-                    </Paper>
-                )}
+
 
                 {/* --- Read-Only Form Content (disabled overlay) --- */}
                 <Box sx={{ pointerEvents: 'none', opacity: 0.75 }}>
