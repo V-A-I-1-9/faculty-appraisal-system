@@ -19,6 +19,7 @@ import HodReview from './pages/HodReview';
 import PrincipalDashboard from './pages/PrincipalDashboard';
 import PrincipalView from './pages/PrincipalView';
 import UserManagement from './pages/UserManagement';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/create-profile" element={<CreateProfile />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
