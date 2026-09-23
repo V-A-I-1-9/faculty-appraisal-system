@@ -61,7 +61,13 @@ const Appraisal = () => {
         setLoading(false);
     }, []);
 
-    useEffect(() => { loadOrCreateAppraisal(); }, [loadOrCreateAppraisal]);
+    useEffect(() => { 
+        if (import.meta.env.VITE_APP_CLOSED === 'true') {
+            navigate('/system-closed');
+            return;
+        }
+        loadOrCreateAppraisal(); 
+    }, [loadOrCreateAppraisal, navigate]);
 
     // Fetch remarks & HR scores when appraisal is submitted
     useEffect(() => {

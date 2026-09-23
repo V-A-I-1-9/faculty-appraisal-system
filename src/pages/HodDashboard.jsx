@@ -27,6 +27,11 @@ const HodDashboard = () => {
     const [hrScores, setHrScores] = useState(null);
 
     useEffect(() => {
+        if (import.meta.env.VITE_APP_CLOSED === 'true') {
+            navigate('/system-closed');
+            return;
+        }
+
         const fetchData = async () => {
             // Fetch the HOD's own appraisal status + remarks + scores
             const { data: { user } } = await supabase.auth.getUser();

@@ -20,6 +20,7 @@ import PrincipalDashboard from './pages/PrincipalDashboard';
 import PrincipalView from './pages/PrincipalView';
 import UserManagement from './pages/UserManagement';
 import ResetPassword from './pages/ResetPassword';
+import SystemClosed from './pages/SystemClosed';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
           <Route path="/principal-dashboard" element={<PrincipalDashboard />} />
           <Route path="/principal/view/:appraisalId" element={<PrincipalView />} />
           <Route path="/principal/user-management" element={<UserManagement />} />
+          <Route path="/system-closed" element={<SystemClosed />} />
         </Route>
       </Routes>
       <ToastContainer position="bottom-right" autoClose={5000} hideProgressBar={false} />

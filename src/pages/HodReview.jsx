@@ -37,6 +37,10 @@ const HodReview = () => {
     const [hodRemarks, setHodRemarks] = useState({ strengths: '', concerns: '', suggestions: '' });
 
     useEffect(() => {
+        if (import.meta.env.VITE_APP_CLOSED === 'true') {
+            navigate('/system-closed');
+            return;
+        }
         const fetchAppraisal = async () => {
             if (!appraisalId) return;
             const { data, error } = await supabase.from('appraisals').select(`*, profile:profiles (*, department:departments(*))`).eq('id', appraisalId).single();

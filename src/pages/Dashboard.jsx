@@ -42,6 +42,12 @@ const Dashboard = () => {
                 console.error('Error fetching profile:', error);
             } else if (data) {
                 if (data.role === 'principal') { navigate('/principal-dashboard'); return; }
+
+                if (import.meta.env.VITE_APP_CLOSED === 'true') {
+                    navigate('/system-closed');
+                    return;
+                }
+
                 if (data.role === 'hod') { navigate('/hod-dashboard'); return; }
 
                 setUserProfile(data);
